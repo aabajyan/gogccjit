@@ -38,9 +38,9 @@ func main() {
 
 	block.EndWithVoidReturn(nil)
 
-	res := ctx.Compile()
-	if res == nil {
-		panic("res is nil")
+	res, err := ctx.Compile()
+	if err != nil {
+		panic(err)
 	}
 
 	defer res.Release()
