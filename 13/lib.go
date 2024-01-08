@@ -1,4 +1,4 @@
-package main
+package gccjit
 
 import "github.com/ebitengine/purego"
 
@@ -329,6 +329,11 @@ func (b *Block) EndWithReturn(loc *Location, rvalue *Rvalue) {
 
 func (r *Result) GetCode(name string) uintptr {
 	return resultGetCode(r, name)
+}
+
+func (r *Result) RegisterFunc(name string, fn any) {
+	ptr := r.GetCode(name)
+	purego.RegisterFunc(fn, ptr)
 }
 
 func (r *Result) Release() {
