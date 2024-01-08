@@ -4,7 +4,7 @@ import "github.com/ebitengine/purego"
 
 func greet() {
 	ctx := contextAcquire()
-	if ctx == 0 {
+	if ctx == nil {
 		panic("ctx is null")
 	}
 
@@ -14,10 +14,10 @@ func greet() {
 
 	void_type := contextGetType(ctx, TYPE_VOID)
 	const_char_type := contextGetType(ctx, TYPE_CONST_CHAR_PTR)
-	param_name := contextNewParam(ctx, 0, const_char_type, "param")
+	param_name := contextNewParam(ctx, nil, const_char_type, "param")
 	fn := contextNewFunction(
 		ctx,
-		0,
+		nil,
 		FUNCTION_EXPORTED,
 		void_type,
 		"greet",
@@ -26,10 +26,10 @@ func greet() {
 		0,
 	)
 
-	param_format := contextNewParam(ctx, 0, const_char_type, "format")
+	param_format := contextNewParam(ctx, nil, const_char_type, "format")
 	printf_func := contextNewFunction(
 		ctx,
-		0,
+		nil,
 		FUNCTION_IMPORTED,
 		contextGetType(ctx, TYPE_INT),
 		"printf",
@@ -39,18 +39,18 @@ func greet() {
 	)
 
 	block := functionNewBlock(fn, "entry")
-	blockAddEval(block, 0, contextNewCall(
+	blockAddEval(block, nil, contextNewCall(
 		ctx,
-		0,
+		nil,
 		printf_func,
 		2,
 		[]Rvalue{contextNewStringLiteral(ctx, "Hello %s from GO!\n"), paramAsRvalue(param_name)},
 	))
 
-	blockEndWithVoidReturn(block, 0)
+	blockEndWithVoidReturn(block, nil)
 
 	res := contextCompile(ctx)
-	if res == 0 {
+	if res == nil {
 		panic("res is null")
 	}
 	defer resultRelease(res)
