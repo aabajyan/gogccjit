@@ -168,6 +168,8 @@ var functionNewLocal func(fn *Function, loc *Location, typ *Type, name string) *
 var blockEndWithReturn func(block *Block, loc *Location, rvalue *Rvalue)
 var contextGetFirstError func(ctx *Context) string
 var contextGetLastError func(ctx *Context) string
+var contextDumpToFile func(ctx *Context, path string, updateLocations bool)
+var contextDumpReproducerToFile func(ctx *Context, path string)
 
 func init() {
 	lib, err := purego.Dlopen("libgccjit.so.0", purego.RTLD_NOW|purego.RTLD_GLOBAL)
@@ -211,6 +213,8 @@ func init() {
 	purego.RegisterLibFunc(&blockEndWithReturn, lib, "gcc_jit_block_end_with_return")
 	purego.RegisterLibFunc(&contextGetFirstError, lib, "gcc_jit_context_get_first_error")
 	purego.RegisterLibFunc(&contextGetLastError, lib, "gcc_jit_context_get_last_error")
+	purego.RegisterLibFunc(&contextDumpToFile, lib, "gcc_jit_context_dump_to_file")
+	purego.RegisterLibFunc(&contextDumpReproducerToFile, lib, "gcc_jit_context_dump_reproducer_to_file")
 }
 
 func ContextAcquire() *Context {
@@ -279,6 +283,14 @@ func (c *Context) Zero(typ *Type) *Rvalue {
 
 func (c *Context) One(typ *Type) *Rvalue {
 	return contextOne(c, typ)
+}
+
+func (c *Context) DumpToFile(path string, updateLocations bool) {
+	contextDumpToFile(c, path, updateLocations)
+}
+
+func (c *Context) DumpReproducerToFile(path string) {
+	contextDumpReproducerToFile(c, path)
 }
 
 func (c *Context) Compile() (*Result, error) {
