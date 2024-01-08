@@ -10,30 +10,30 @@ const MAX_OPEN_PARENS = 20
 type bfCompiler struct {
 	filename     string
 	line, column int
-	ctx          gcc_jit_context
-	void_type    gcc_jit_type
-	int_type     gcc_jit_type
-	byte_type    gcc_jit_type
-	array_type   gcc_jit_type
+	ctx          Context
+	void_type    Type
+	int_type     Type
+	byte_type    Type
+	array_type   Type
 
-	func_getchar gcc_jit_function
-	func_putchar gcc_jit_function
-	func_main    gcc_jit_function
+	func_getchar Function
+	func_putchar Function
+	func_main    Function
 
-	curblock gcc_jit_block
+	curblock Block
 
-	int_zero   gcc_jit_rvalue
-	int_one    gcc_jit_rvalue
-	byte_zero  gcc_jit_rvalue
-	byte_one   gcc_jit_rvalue
-	data_cells gcc_jit_lvalue
-	idx        gcc_jit_lvalue
+	int_zero   Rvalue
+	int_one    Rvalue
+	byte_zero  Rvalue
+	byte_one   Rvalue
+	data_cells Lvalue
+	idx        Lvalue
 
 	num_open_parens int
 
-	paren_test  []gcc_jit_block
-	paren_body  []gcc_jit_block
-	paren_after []gcc_jit_block
+	paren_test  []Block
+	paren_body  []Block
+	paren_after []Block
 }
 
 func (c *bfCompiler) fatalError(msg string) {
@@ -41,32 +41,32 @@ func (c *bfCompiler) fatalError(msg string) {
 	os.Exit(1)
 }
 
-func (c *bfCompiler) getCurrentData(loc gcc_jit_location) gcc_jit_lvalue {
-	return gcc_jit_context_new_array_access(
+func (c *bfCompiler) getCurrentData(loc Location) Lvalue {
+	return contextNewArrayAccess(
 		c.ctx,
 		loc,
-		gcc_jit_lvalue_as_rvalue(c.data_cells),
-		gcc_jit_lvalue_as_rvalue(c.idx),
+		lvalueAsRvalue(c.data_cells),
+		lvalueAsRvalue(c.idx),
 	)
 }
 
-func (c *bfCompiler) currentDataIsZero(loc gcc_jit_location) gcc_jit_rvalue {
-	return gcc_jit_context_new_comparison(
+func (c *bfCompiler) currentDataIsZero(loc Location) Rvalue {
+	return contextNewComparison(
 		c.ctx,
 		loc,
 		COMPARISON_EQ,
-		gcc_jit_lvalue_as_rvalue(c.getCurrentData(loc)),
+		lvalueAsRvalue(c.getCurrentData(loc)),
 		c.byte_zero,
 	)
 }
 
 func (c *bfCompiler) compileChar(ch byte) {
-	loc := gcc_jit_context_new_location(c.ctx, c.filename, c.line, c.column)
+	loc := contextNewLocation(c.ctx, c.filename, c.line, c.column)
 
 	switch ch {
 	case '>':
-		gcc_jit_block_add_comment(c.curblock, loc, "'>': idx += 1;")
-		gcc_jit_block_add_assignment_op(
+		blockAddComment(c.curblock, loc, "'>': idx += 1;")
+		blockAddAssignmentOp(
 			c.curblock,
 			loc,
 			c.idx,
@@ -74,8 +74,8 @@ func (c *bfCompiler) compileChar(ch byte) {
 			c.int_one,
 		)
 	case '<':
-		gcc_jit_block_add_comment(c.curblock, loc, "'<': idx -= 1;")
-		gcc_jit_block_add_assignment_op(
+		blockAddComment(c.curblock, loc, "'<': idx -= 1;")
+		blockAddAssignmentOp(
 			c.curblock,
 			loc,
 			c.idx,
@@ -83,8 +83,8 @@ func (c *bfCompiler) compileChar(ch byte) {
 			c.int_one,
 		)
 	case '+':
-		gcc_jit_block_add_comment(c.curblock, loc, "'+': data[idx] += 1;")
-		gcc_jit_block_add_assignment_op(
+		blockAddComment(c.curblock, loc, "'+': data[idx] += 1;")
+		blockAddAssignmentOp(
 			c.curblock,
 			loc,
 			c.getCurrentData(loc),
@@ -92,8 +92,8 @@ func (c *bfCompiler) compileChar(ch byte) {
 			c.byte_one,
 		)
 	case '-':
-		gcc_jit_block_add_comment(c.curblock, loc, "'-': data[idx] -= 1;")
-		gcc_jit_block_add_assignment_op(
+		blockAddComment(c.curblock, loc, "'-': data[idx] -= 1;")
+		blockAddAssignmentOp(
 			c.curblock,
 			loc,
 			c.getCurrentData(loc),
@@ -101,38 +101,38 @@ func (c *bfCompiler) compileChar(ch byte) {
 			c.byte_one,
 		)
 	case '.':
-		arg := gcc_jit_context_new_cast(
+		arg := contextNewCast(
 			c.ctx,
 			loc,
-			gcc_jit_lvalue_as_rvalue(c.getCurrentData(loc)),
+			lvalueAsRvalue(c.getCurrentData(loc)),
 			c.int_type,
 		)
 
-		call := gcc_jit_context_new_call(
+		call := contextNewCall(
 			c.ctx,
 			loc,
 			c.func_putchar,
 			1,
-			[]gcc_jit_rvalue{arg},
+			[]Rvalue{arg},
 		)
 
-		gcc_jit_block_add_comment(c.curblock, loc, "'.': putchar(data[idx]);")
-		gcc_jit_block_add_eval(c.curblock, loc, call)
+		blockAddComment(c.curblock, loc, "'.': putchar(data[idx]);")
+		blockAddEval(c.curblock, loc, call)
 	case ',':
-		call := gcc_jit_context_new_call(
+		call := contextNewCall(
 			c.ctx,
 			loc,
 			c.func_getchar,
 			0,
-			[]gcc_jit_rvalue{},
+			[]Rvalue{},
 		)
 
-		gcc_jit_block_add_comment(c.curblock, loc, "',': data[idx] = getchar();")
-		gcc_jit_block_add_assignment(
+		blockAddComment(c.curblock, loc, "',': data[idx] = getchar();")
+		blockAddAssignment(
 			c.curblock,
 			loc,
 			c.getCurrentData(loc),
-			gcc_jit_context_new_cast(
+			contextNewCast(
 				c.ctx,
 				loc,
 				call,
@@ -140,27 +140,27 @@ func (c *bfCompiler) compileChar(ch byte) {
 			),
 		)
 	case '[':
-		loop_test := gcc_jit_function_new_block(c.func_main, "loop_test")
-		on_zero := gcc_jit_function_new_block(c.func_main, "on_zero")
-		on_non_zero := gcc_jit_function_new_block(c.func_main, "on_non_zero")
+		loop_test := functionNewBlock(c.func_main, "loop_test")
+		on_zero := functionNewBlock(c.func_main, "on_zero")
+		on_non_zero := functionNewBlock(c.func_main, "on_non_zero")
 
 		if c.num_open_parens >= MAX_OPEN_PARENS {
 			c.fatalError("too many open parens")
 		}
 
-		gcc_jit_block_end_with_jump(
+		blockEndWithJump(
 			c.curblock,
 			loc,
 			loop_test,
 		)
 
-		gcc_jit_block_add_comment(
+		blockAddComment(
 			loop_test,
 			loc,
 			"'['",
 		)
 
-		gcc_jit_block_end_with_conditional(
+		blockEndWithConditional(
 			loop_test,
 			loc,
 			c.currentDataIsZero(loc),
@@ -174,13 +174,13 @@ func (c *bfCompiler) compileChar(ch byte) {
 		c.num_open_parens += 1
 		c.curblock = on_non_zero
 	case ']':
-		gcc_jit_block_add_comment(c.curblock, loc, "']':")
+		blockAddComment(c.curblock, loc, "']':")
 
 		if c.num_open_parens == 0 {
 			c.fatalError("mismatching parens")
 		}
 		c.num_open_parens -= 1
-		gcc_jit_block_end_with_jump(
+		blockEndWithJump(
 			c.curblock,
 			loc,
 			c.paren_test[c.num_open_parens],
@@ -196,21 +196,21 @@ func (c *bfCompiler) compileChar(ch byte) {
 	}
 }
 
-func make_main(ctx gcc_jit_context) gcc_jit_function {
-	int_type := gcc_jit_context_get_type(ctx, TYPE_INT)
-	char_ptr_ptr_type := gcc_jit_type_get_pointer(gcc_jit_context_get_type(ctx, TYPE_CONST_CHAR_PTR))
+func make_main(ctx Context) Function {
+	int_type := contextGetType(ctx, TYPE_INT)
+	char_ptr_ptr_type := typeGetPointer(contextGetType(ctx, TYPE_CONST_CHAR_PTR))
 
-	param_argc := gcc_jit_context_new_param(ctx, 0, int_type, "argc")
-	param_argv := gcc_jit_context_new_param(ctx, 0, char_ptr_ptr_type, "argv")
+	param_argc := contextNewParam(ctx, 0, int_type, "argc")
+	param_argv := contextNewParam(ctx, 0, char_ptr_ptr_type, "argv")
 
-	main_func := gcc_jit_context_new_function(
+	main_func := contextNewFunction(
 		ctx,
 		0,
 		FUNCTION_EXPORTED,
 		int_type,
 		"main",
 		2,
-		[]gcc_jit_param{param_argc, param_argv},
+		[]Param{param_argc, param_argv},
 		0,
 	)
 
@@ -220,9 +220,9 @@ func make_main(ctx gcc_jit_context) gcc_jit_function {
 func compile_bf(filename string) {
 	c := bfCompiler{
 		filename:    filename,
-		paren_test:  make([]gcc_jit_block, MAX_OPEN_PARENS),
-		paren_body:  make([]gcc_jit_block, MAX_OPEN_PARENS),
-		paren_after: make([]gcc_jit_block, MAX_OPEN_PARENS),
+		paren_test:  make([]Block, MAX_OPEN_PARENS),
+		paren_body:  make([]Block, MAX_OPEN_PARENS),
+		paren_after: make([]Block, MAX_OPEN_PARENS),
 	}
 
 	code, err := os.ReadFile(filename)
@@ -232,57 +232,57 @@ func compile_bf(filename string) {
 
 	c.line = 1
 
-	if c.ctx = gcc_jit_context_acquire(); c.ctx == 0 {
+	if c.ctx = contextAcquire(); c.ctx == 0 {
 		panic("failed to acquire context")
 	}
 
-	defer gcc_jit_context_release(c.ctx)
+	defer contextRelease(c.ctx)
 
-	gcc_jit_context_set_int_option(c.ctx, INT_OPTION_OPTIMIZATION_LEVEL, 3)
-	gcc_jit_context_set_bool_option(c.ctx, BOOL_OPTION_DUMP_INITIAL_GIMPLE, false)
-	gcc_jit_context_set_bool_option(c.ctx, BOOL_OPTION_DEBUGINFO, true)
-	gcc_jit_context_set_bool_option(c.ctx, BOOL_OPTION_DUMP_EVERYTHING, false)
-	gcc_jit_context_set_bool_option(c.ctx, BOOL_OPTION_KEEP_INTERMEDIATES, false)
+	contextSetIntOption(c.ctx, INT_OPTION_OPTIMIZATION_LEVEL, 3)
+	contextSetBoolOption(c.ctx, BOOL_OPTION_DUMP_INITIAL_GIMPLE, false)
+	contextSetBoolOption(c.ctx, BOOL_OPTION_DEBUGINFO, true)
+	contextSetBoolOption(c.ctx, BOOL_OPTION_DUMP_EVERYTHING, false)
+	contextSetBoolOption(c.ctx, BOOL_OPTION_KEEP_INTERMEDIATES, false)
 
-	c.void_type = gcc_jit_context_get_type(c.ctx, TYPE_VOID)
-	c.int_type = gcc_jit_context_get_type(c.ctx, TYPE_INT)
-	c.byte_type = gcc_jit_context_get_type(c.ctx, TYPE_UNSIGNED_CHAR)
-	c.array_type = gcc_jit_context_new_array_type(c.ctx, 0, c.byte_type, 30000)
+	c.void_type = contextGetType(c.ctx, TYPE_VOID)
+	c.int_type = contextGetType(c.ctx, TYPE_INT)
+	c.byte_type = contextGetType(c.ctx, TYPE_UNSIGNED_CHAR)
+	c.array_type = contextNewArrayType(c.ctx, 0, c.byte_type, 30000)
 
-	c.func_getchar = gcc_jit_context_new_function(
+	c.func_getchar = contextNewFunction(
 		c.ctx,
 		0,
 		FUNCTION_IMPORTED,
 		c.int_type,
 		"getchar",
 		0,
-		[]gcc_jit_param{},
+		[]Param{},
 		0,
 	)
 
-	param_c := gcc_jit_context_new_param(c.ctx, 0, c.int_type, "c")
-	c.func_putchar = gcc_jit_context_new_function(
+	param_c := contextNewParam(c.ctx, 0, c.int_type, "c")
+	c.func_putchar = contextNewFunction(
 		c.ctx,
 		0,
 		FUNCTION_IMPORTED,
 		c.void_type,
 		"putchar",
 		1,
-		[]gcc_jit_param{param_c},
+		[]Param{param_c},
 		0,
 	)
 
 	c.func_main = make_main(c.ctx)
-	c.curblock = gcc_jit_function_new_block(c.func_main, "main")
-	c.int_zero = gcc_jit_context_zero(c.ctx, c.int_type)
-	c.int_one = gcc_jit_context_one(c.ctx, c.int_type)
-	c.byte_zero = gcc_jit_context_zero(c.ctx, c.byte_type)
-	c.byte_one = gcc_jit_context_one(c.ctx, c.byte_type)
-	c.data_cells = gcc_jit_context_new_global(c.ctx, 0, GLOBAL_INTERNAL, c.array_type, "data_cells")
-	c.idx = gcc_jit_function_new_local(c.func_main, 0, c.int_type, "idx")
+	c.curblock = functionNewBlock(c.func_main, "main")
+	c.int_zero = contextZero(c.ctx, c.int_type)
+	c.int_one = contextOne(c.ctx, c.int_type)
+	c.byte_zero = contextZero(c.ctx, c.byte_type)
+	c.byte_one = contextOne(c.ctx, c.byte_type)
+	c.data_cells = contextNewGlobal(c.ctx, 0, GLOBAL_INTERNAL, c.array_type, "data_cells")
+	c.idx = functionNewLocal(c.func_main, 0, c.int_type, "idx")
 
-	gcc_jit_block_add_comment(c.curblock, 0, "idx = 0;")
-	gcc_jit_block_add_assignment(c.curblock, 0, c.idx, c.int_zero)
+	blockAddComment(c.curblock, 0, "idx = 0;")
+	blockAddAssignment(c.curblock, 0, c.idx, c.int_zero)
 
 	c.num_open_parens = 0
 
@@ -290,11 +290,11 @@ func compile_bf(filename string) {
 		c.compileChar(ch)
 	}
 
-	gcc_jit_block_end_with_return(c.curblock, 0, c.int_zero)
+	blockEndWithReturn(c.curblock, 0, c.int_zero)
 
-	gcc_jit_context_compile_to_file(c.ctx, OUTPUT_KIND_EXECUTABLE, "a.out")
+	contextCompileToFile(c.ctx, OUTPUT_KIND_EXECUTABLE, "a.out")
 
-	strerr := gcc_jit_context_get_first_error(c.ctx)
+	strerr := contextGetFirstError(c.ctx)
 	if strerr != "" {
 		println(strerr)
 	}

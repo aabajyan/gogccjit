@@ -2,26 +2,26 @@ package main
 
 import "github.com/ebitengine/purego"
 
-type gcc_jit_function uintptr
-type gcc_jit_param uintptr
-type gcc_jit_location uintptr
-type gcc_jit_context uintptr
-type gcc_jit_result uintptr
-type gcc_jit_bool_option int
-type gcc_jit_types int
-type gcc_jit_function_kind int
-type gcc_jit_type uintptr
-type gcc_jit_rvalue uintptr
-type gcc_jit_lvalue uintptr
-type gcc_jit_block uintptr
-type gcc_jit_output_kind int
-type gcc_jit_comparison int
-type gcc_jit_binary_op int
-type gcc_jit_int_option int
-type gcc_jit_global_kind int
+type Function uintptr
+type Param uintptr
+type Location uintptr
+type Context uintptr
+type Result uintptr
+type BoolOption int
+type Types int
+type FunctionKind int
+type Type uintptr
+type Rvalue uintptr
+type Lvalue uintptr
+type Block uintptr
+type OutputKind int
+type Comparison int
+type BinaryOp int
+type IntOption int
+type GlobalKind int
 
 const (
-	BOOL_OPTION_DEBUGINFO gcc_jit_bool_option = iota
+	BOOL_OPTION_DEBUGINFO BoolOption = iota
 	BOOL_OPTION_DUMP_INITIAL_TREE
 	BOOL_OPTION_DUMP_INITIAL_GIMPLE
 	BOOL_OPTION_DUMP_GENERATED_CODE
@@ -33,14 +33,14 @@ const (
 )
 
 const (
-	FUNCTION_EXPORTED gcc_jit_function_kind = iota
+	FUNCTION_EXPORTED FunctionKind = iota
 	FUNCTION_INTERNAL
 	FUNCTION_IMPORTED
 	FUNCTION_ALWAYS_INLINE
 )
 
 const (
-	TYPE_VOID gcc_jit_types = iota
+	TYPE_VOID Types = iota
 	TYPE_VOID_PTR
 	TYPE_BOOL
 	TYPE_CHAR
@@ -76,14 +76,14 @@ const (
 )
 
 const (
-	OUTPUT_KIND_ASSEMBLER gcc_jit_output_kind = iota
+	OUTPUT_KIND_ASSEMBLER OutputKind = iota
 	OUTPUT_KIND_OBJECT_FILE
 	OUTPUT_KIND_DYNAMIC_LIBRARY
 	OUTPUT_KIND_EXECUTABLE
 )
 
 const (
-	COMPARISON_EQ gcc_jit_comparison = iota
+	COMPARISON_EQ Comparison = iota
 	COMPARISON_NE
 	COMPARISON_LT
 	COMPARISON_LE
@@ -92,7 +92,7 @@ const (
 )
 
 const (
-	BINARY_OP_PLUS gcc_jit_binary_op = iota
+	BINARY_OP_PLUS BinaryOp = iota
 	BINARY_OP_MINUS
 	BINARY_OP_MULT
 	BINARY_OP_DIVIDE
@@ -107,51 +107,51 @@ const (
 )
 
 const (
-	INT_OPTION_OPTIMIZATION_LEVEL gcc_jit_int_option = iota
+	INT_OPTION_OPTIMIZATION_LEVEL IntOption = iota
 	NUM_INT_OPTIONS
 )
 
 const (
-	GLOBAL_EXPORTED gcc_jit_global_kind = iota
+	GLOBAL_EXPORTED GlobalKind = iota
 	GLOBAL_INTERNAL
 	GLOBAL_IMPORTED
 )
 
-var gcc_jit_context_acquire func() gcc_jit_context
-var gcc_jit_context_release func(ctx gcc_jit_context)
-var gcc_jit_context_set_bool_option func(ctx gcc_jit_context, opt gcc_jit_bool_option, value bool) uintptr
-var gcc_jit_context_compile func(ctx gcc_jit_context) gcc_jit_result
-var gcc_jit_result_release func(ctx gcc_jit_result)
-var gcc_jit_context_get_type func(ctx gcc_jit_context, type_ gcc_jit_types) gcc_jit_type
-var gcc_jit_context_new_param func(ctx gcc_jit_context, loc gcc_jit_location, type_ gcc_jit_type, name string) gcc_jit_param
-var gcc_jit_context_new_function func(ctx gcc_jit_context, loc gcc_jit_location, kind gcc_jit_function_kind, return_type gcc_jit_type, name string, num_params int, params []gcc_jit_param, is_variadic int) gcc_jit_function
-var gcc_jit_context_new_string_literal func(ctx gcc_jit_context, value string) gcc_jit_rvalue
-var gcc_jit_function_new_block func(fn gcc_jit_function, name string) gcc_jit_block
-var gcc_jit_block_add_eval func(block gcc_jit_block, loc gcc_jit_location, rvalue gcc_jit_rvalue)
-var gcc_jit_context_new_call func(ctx gcc_jit_context, loc gcc_jit_location, fn gcc_jit_function, numargs int, args []gcc_jit_rvalue) gcc_jit_rvalue
-var gcc_jit_block_end_with_void_return func(block gcc_jit_block, loc gcc_jit_location)
-var gcc_jit_result_get_code func(result gcc_jit_result, name string) uintptr
-var gcc_jit_param_as_rvalue func(param gcc_jit_param) gcc_jit_rvalue
-var gcc_jit_context_compile_to_file func(ctx gcc_jit_context, output_kind gcc_jit_output_kind, output_path string)
-var gcc_jit_context_new_array_access func(ctx gcc_jit_context, loc gcc_jit_location, ptr gcc_jit_rvalue, idx gcc_jit_rvalue) gcc_jit_lvalue
-var gcc_jit_lvalue_as_rvalue func(lvalue gcc_jit_lvalue) gcc_jit_rvalue
-var gcc_jit_context_new_comparison func(ctx gcc_jit_context, loc gcc_jit_location, op gcc_jit_comparison, lhs gcc_jit_rvalue, rhs gcc_jit_rvalue) gcc_jit_rvalue
-var gcc_jit_context_new_location func(ctx gcc_jit_context, filename string, line, column int) gcc_jit_location
-var gcc_jit_block_add_comment func(block gcc_jit_block, loc gcc_jit_location, text string)
-var gcc_jit_block_add_assignment_op func(block gcc_jit_block, loc gcc_jit_location, lvalue gcc_jit_lvalue, op gcc_jit_binary_op, rvalue gcc_jit_rvalue)
-var gcc_jit_context_new_cast func(ctx gcc_jit_context, loc gcc_jit_location, rvalue gcc_jit_rvalue, type_ gcc_jit_type) gcc_jit_rvalue
-var gcc_jit_block_add_assignment func(block gcc_jit_block, loc gcc_jit_location, lvalue gcc_jit_lvalue, rvalue gcc_jit_rvalue)
-var gcc_jit_block_end_with_jump func(block gcc_jit_block, loc gcc_jit_location, target gcc_jit_block)
-var gcc_jit_block_end_with_conditional func(block gcc_jit_block, loc gcc_jit_location, boolval gcc_jit_rvalue, on_true gcc_jit_block, on_false gcc_jit_block)
-var gcc_jit_context_set_int_option func(ctx gcc_jit_context, opt gcc_jit_int_option, value int)
-var gcc_jit_context_new_array_type func(ctx gcc_jit_context, loc gcc_jit_location, element_type gcc_jit_type, num_elements int) gcc_jit_type
-var gcc_jit_type_get_pointer func(type_ gcc_jit_type) gcc_jit_type
-var gcc_jit_context_zero func(ctx gcc_jit_context, type_ gcc_jit_type) gcc_jit_rvalue
-var gcc_jit_context_one func(ctx gcc_jit_context, type_ gcc_jit_type) gcc_jit_rvalue
-var gcc_jit_context_new_global func(ctx gcc_jit_context, loc gcc_jit_location, kind gcc_jit_global_kind, type_ gcc_jit_type, name string) gcc_jit_lvalue
-var gcc_jit_function_new_local func(fn gcc_jit_function, loc gcc_jit_location, type_ gcc_jit_type, name string) gcc_jit_lvalue
-var gcc_jit_block_end_with_return func(block gcc_jit_block, loc gcc_jit_location, rvalue gcc_jit_rvalue)
-var gcc_jit_context_get_first_error func(ctx gcc_jit_context) string
+var contextAcquire func() Context
+var contextRelease func(ctx Context)
+var contextSetBoolOption func(ctx Context, opt BoolOption, value bool) uintptr
+var contextCompile func(ctx Context) Result
+var resultRelease func(ctx Result)
+var contextGetType func(ctx Context, type_ Types) Type
+var contextNewParam func(ctx Context, loc Location, type_ Type, name string) Param
+var contextNewFunction func(ctx Context, loc Location, kind FunctionKind, return_type Type, name string, num_params int, params []Param, is_variadic int) Function
+var contextNewStringLiteral func(ctx Context, value string) Rvalue
+var functionNewBlock func(fn Function, name string) Block
+var blockAddEval func(block Block, loc Location, rvalue Rvalue)
+var contextNewCall func(ctx Context, loc Location, fn Function, numargs int, args []Rvalue) Rvalue
+var blockEndWithVoidReturn func(block Block, loc Location)
+var resultGetCode func(result Result, name string) uintptr
+var paramAsRvalue func(param Param) Rvalue
+var contextCompileToFile func(ctx Context, output_kind OutputKind, output_path string)
+var contextNewArrayAccess func(ctx Context, loc Location, ptr Rvalue, idx Rvalue) Lvalue
+var lvalueAsRvalue func(lvalue Lvalue) Rvalue
+var contextNewComparison func(ctx Context, loc Location, op Comparison, lhs Rvalue, rhs Rvalue) Rvalue
+var contextNewLocation func(ctx Context, filename string, line, column int) Location
+var blockAddComment func(block Block, loc Location, text string)
+var blockAddAssignmentOp func(block Block, loc Location, lvalue Lvalue, op BinaryOp, rvalue Rvalue)
+var contextNewCast func(ctx Context, loc Location, rvalue Rvalue, type_ Type) Rvalue
+var blockAddAssignment func(block Block, loc Location, lvalue Lvalue, rvalue Rvalue)
+var blockEndWithJump func(block Block, loc Location, target Block)
+var blockEndWithConditional func(block Block, loc Location, boolval Rvalue, on_true Block, on_false Block)
+var contextSetIntOption func(ctx Context, opt IntOption, value int)
+var contextNewArrayType func(ctx Context, loc Location, element_type Type, num_elements int) Type
+var typeGetPointer func(type_ Type) Type
+var contextZero func(ctx Context, type_ Type) Rvalue
+var contextOne func(ctx Context, type_ Type) Rvalue
+var contextNewGlobal func(ctx Context, loc Location, kind GlobalKind, type_ Type, name string) Lvalue
+var functionNewLocal func(fn Function, loc Location, type_ Type, name string) Lvalue
+var blockEndWithReturn func(block Block, loc Location, rvalue Rvalue)
+var contextGetFirstError func(ctx Context) string
 
 func init() {
 	lib, err := purego.Dlopen("libgccjit.so.0", purego.RTLD_NOW|purego.RTLD_GLOBAL)
@@ -159,40 +159,40 @@ func init() {
 		panic(err)
 	}
 
-	purego.RegisterLibFunc(&gcc_jit_context_acquire, lib, "gcc_jit_context_acquire")
-	purego.RegisterLibFunc(&gcc_jit_context_release, lib, "gcc_jit_context_release")
-	purego.RegisterLibFunc(&gcc_jit_context_set_bool_option, lib, "gcc_jit_context_set_bool_option")
-	purego.RegisterLibFunc(&gcc_jit_context_compile, lib, "gcc_jit_context_compile")
-	purego.RegisterLibFunc(&gcc_jit_result_release, lib, "gcc_jit_result_release")
-	purego.RegisterLibFunc(&gcc_jit_context_get_type, lib, "gcc_jit_context_get_type")
-	purego.RegisterLibFunc(&gcc_jit_context_new_param, lib, "gcc_jit_context_new_param")
-	purego.RegisterLibFunc(&gcc_jit_context_new_function, lib, "gcc_jit_context_new_function")
-	purego.RegisterLibFunc(&gcc_jit_context_new_string_literal, lib, "gcc_jit_context_new_string_literal")
-	purego.RegisterLibFunc(&gcc_jit_function_new_block, lib, "gcc_jit_function_new_block")
-	purego.RegisterLibFunc(&gcc_jit_block_add_eval, lib, "gcc_jit_block_add_eval")
-	purego.RegisterLibFunc(&gcc_jit_context_new_call, lib, "gcc_jit_context_new_call")
-	purego.RegisterLibFunc(&gcc_jit_block_end_with_void_return, lib, "gcc_jit_block_end_with_void_return")
-	purego.RegisterLibFunc(&gcc_jit_result_get_code, lib, "gcc_jit_result_get_code")
-	purego.RegisterLibFunc(&gcc_jit_param_as_rvalue, lib, "gcc_jit_param_as_rvalue")
-	purego.RegisterLibFunc(&gcc_jit_context_compile_to_file, lib, "gcc_jit_context_compile_to_file")
-	purego.RegisterLibFunc(&gcc_jit_context_new_array_access, lib, "gcc_jit_context_new_array_access")
-	purego.RegisterLibFunc(&gcc_jit_lvalue_as_rvalue, lib, "gcc_jit_lvalue_as_rvalue")
-	purego.RegisterLibFunc(&gcc_jit_context_new_comparison, lib, "gcc_jit_context_new_comparison")
-	purego.RegisterLibFunc(&gcc_jit_context_new_location, lib, "gcc_jit_context_new_location")
-	purego.RegisterLibFunc(&gcc_jit_block_add_comment, lib, "gcc_jit_block_add_comment")
-	purego.RegisterLibFunc(&gcc_jit_block_add_assignment_op, lib, "gcc_jit_block_add_assignment_op")
-	purego.RegisterLibFunc(&gcc_jit_context_new_cast, lib, "gcc_jit_context_new_cast")
-	purego.RegisterLibFunc(&gcc_jit_block_add_assignment, lib, "gcc_jit_block_add_assignment")
-	purego.RegisterLibFunc(&gcc_jit_block_end_with_jump, lib, "gcc_jit_block_end_with_jump")
-	purego.RegisterLibFunc(&gcc_jit_block_end_with_conditional, lib, "gcc_jit_block_end_with_conditional")
-	purego.RegisterLibFunc(&gcc_jit_context_set_int_option, lib, "gcc_jit_context_set_int_option")
-	purego.RegisterLibFunc(&gcc_jit_context_new_array_type, lib, "gcc_jit_context_new_array_type")
-	purego.RegisterLibFunc(&gcc_jit_type_get_pointer, lib, "gcc_jit_type_get_pointer")
-	purego.RegisterLibFunc(&gcc_jit_context_zero, lib, "gcc_jit_context_zero")
-	purego.RegisterLibFunc(&gcc_jit_context_one, lib, "gcc_jit_context_one")
-	purego.RegisterLibFunc(&gcc_jit_context_new_global, lib, "gcc_jit_context_new_global")
-	purego.RegisterLibFunc(&gcc_jit_function_new_local, lib, "gcc_jit_function_new_local")
-	purego.RegisterLibFunc(&gcc_jit_block_end_with_return, lib, "gcc_jit_block_end_with_return")
-	purego.RegisterLibFunc(&gcc_jit_context_get_first_error, lib, "gcc_jit_context_get_first_error")
+	purego.RegisterLibFunc(&contextAcquire, lib, "gcc_jit_context_acquire")
+	purego.RegisterLibFunc(&contextRelease, lib, "gcc_jit_context_release")
+	purego.RegisterLibFunc(&contextSetBoolOption, lib, "gcc_jit_context_set_bool_option")
+	purego.RegisterLibFunc(&contextCompile, lib, "gcc_jit_context_compile")
+	purego.RegisterLibFunc(&resultRelease, lib, "gcc_jit_result_release")
+	purego.RegisterLibFunc(&contextGetType, lib, "gcc_jit_context_get_type")
+	purego.RegisterLibFunc(&contextNewParam, lib, "gcc_jit_context_new_param")
+	purego.RegisterLibFunc(&contextNewFunction, lib, "gcc_jit_context_new_function")
+	purego.RegisterLibFunc(&contextNewStringLiteral, lib, "gcc_jit_context_new_string_literal")
+	purego.RegisterLibFunc(&functionNewBlock, lib, "gcc_jit_function_new_block")
+	purego.RegisterLibFunc(&blockAddEval, lib, "gcc_jit_block_add_eval")
+	purego.RegisterLibFunc(&contextNewCall, lib, "gcc_jit_context_new_call")
+	purego.RegisterLibFunc(&blockEndWithVoidReturn, lib, "gcc_jit_block_end_with_void_return")
+	purego.RegisterLibFunc(&resultGetCode, lib, "gcc_jit_result_get_code")
+	purego.RegisterLibFunc(&paramAsRvalue, lib, "gcc_jit_param_as_rvalue")
+	purego.RegisterLibFunc(&contextCompileToFile, lib, "gcc_jit_context_compile_to_file")
+	purego.RegisterLibFunc(&contextNewArrayAccess, lib, "gcc_jit_context_new_array_access")
+	purego.RegisterLibFunc(&lvalueAsRvalue, lib, "gcc_jit_lvalue_as_rvalue")
+	purego.RegisterLibFunc(&contextNewComparison, lib, "gcc_jit_context_new_comparison")
+	purego.RegisterLibFunc(&contextNewLocation, lib, "gcc_jit_context_new_location")
+	purego.RegisterLibFunc(&blockAddComment, lib, "gcc_jit_block_add_comment")
+	purego.RegisterLibFunc(&blockAddAssignmentOp, lib, "gcc_jit_block_add_assignment_op")
+	purego.RegisterLibFunc(&contextNewCast, lib, "gcc_jit_context_new_cast")
+	purego.RegisterLibFunc(&blockAddAssignment, lib, "gcc_jit_block_add_assignment")
+	purego.RegisterLibFunc(&blockEndWithJump, lib, "gcc_jit_block_end_with_jump")
+	purego.RegisterLibFunc(&blockEndWithConditional, lib, "gcc_jit_block_end_with_conditional")
+	purego.RegisterLibFunc(&contextSetIntOption, lib, "gcc_jit_context_set_int_option")
+	purego.RegisterLibFunc(&contextNewArrayType, lib, "gcc_jit_context_new_array_type")
+	purego.RegisterLibFunc(&typeGetPointer, lib, "gcc_jit_type_get_pointer")
+	purego.RegisterLibFunc(&contextZero, lib, "gcc_jit_context_zero")
+	purego.RegisterLibFunc(&contextOne, lib, "gcc_jit_context_one")
+	purego.RegisterLibFunc(&contextNewGlobal, lib, "gcc_jit_context_new_global")
+	purego.RegisterLibFunc(&functionNewLocal, lib, "gcc_jit_function_new_local")
+	purego.RegisterLibFunc(&blockEndWithReturn, lib, "gcc_jit_block_end_with_return")
+	purego.RegisterLibFunc(&contextGetFirstError, lib, "gcc_jit_context_get_first_error")
 
 }
