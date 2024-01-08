@@ -205,5 +205,80 @@ func init() {
 	purego.RegisterLibFunc(&functionNewLocal, lib, "gcc_jit_function_new_local")
 	purego.RegisterLibFunc(&blockEndWithReturn, lib, "gcc_jit_block_end_with_return")
 	purego.RegisterLibFunc(&contextGetFirstError, lib, "gcc_jit_context_get_first_error")
+}
 
+func ContextAcquire() *Context {
+	return contextAcquire()
+}
+
+func (c *Context) SetBoolOption(opt BoolOption, value bool) {
+	contextSetBoolOption(c, opt, value)
+}
+
+func (c *Context) GetType(type_ Types) *Type {
+	return contextGetType(c, type_)
+}
+
+func (c *Context) NewFunction(kind FunctionKind, return_type *Type, name string, params []*Param, isVariadic bool) *Function {
+	return contextNewFunction(c, nil, kind, return_type, name, len(params), params, isVariadic)
+}
+
+func (c *Context) NewFunctionWithLocation(loc *Location, name string, kind FunctionKind, return_type *Type, params []*Param, isVariadic bool) *Function {
+	return contextNewFunction(c, loc, kind, return_type, name, len(params), params, isVariadic)
+}
+
+func (c *Context) NewParam(type_ *Type, name string) *Param {
+	return contextNewParam(c, nil, type_, name)
+}
+
+func (c *Context) NewParamWithLocaction(loc *Location, type_ *Type, name string) *Param {
+	return contextNewParam(c, loc, type_, name)
+}
+
+func (c *Context) NewBlock(fn *Function, name string) *Block {
+	return functionNewBlock(fn, name)
+}
+
+func (c *Context) NewCall(fn *Function, args []*Rvalue) *Rvalue {
+	return contextNewCall(c, nil, fn, len(args), args)
+}
+
+func (c *Context) NewCallWithLocation(loc *Location, fn *Function, args []*Rvalue) *Rvalue {
+	return contextNewCall(c, loc, fn, len(args), args)
+}
+
+func (c *Context) NewStringLiteral(value string) *Rvalue {
+	return contextNewStringLiteral(c, value)
+}
+
+func (c *Context) Compile() *Result {
+	return contextCompile(c)
+}
+
+func (c *Context) Release() {
+	contextRelease(c)
+}
+
+func (p *Param) AsRvalue() *Rvalue {
+	return paramAsRvalue(p)
+}
+
+func (b *Block) AddEval(rvalue *Rvalue) {
+	blockAddEval(b, nil, rvalue)
+}
+
+func (b *Block) AddEvalWithLocation(loc *Location, rvalue *Rvalue) {
+	blockAddEval(b, loc, rvalue)
+}
+
+func (b *Block) EndWithVoidReturn(loc *Location) {
+	blockEndWithVoidReturn(b, loc)
+}
+
+func (r *Result) GetCode(name string) uintptr {
+	return resultGetCode(r, name)
+}
+
+func (r *Result) Release() {
+	resultRelease(r)
 }
