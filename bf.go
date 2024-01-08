@@ -211,7 +211,7 @@ func make_main(ctx *Context) *Function {
 		"main",
 		2,
 		[]*Param{param_argc, param_argv},
-		0,
+		false,
 	)
 
 	return main_func
@@ -257,7 +257,7 @@ func compile_bf(filename string) {
 		"getchar",
 		0,
 		[]*Param{},
-		0,
+		false,
 	)
 
 	param_c := contextNewParam(c.ctx, nil, c.int_type, "c")
@@ -269,7 +269,7 @@ func compile_bf(filename string) {
 		"putchar",
 		1,
 		[]*Param{param_c},
-		0,
+		false,
 	)
 
 	c.func_main = make_main(c.ctx)

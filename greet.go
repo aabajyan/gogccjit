@@ -23,7 +23,7 @@ func greet() {
 		"greet",
 		1,
 		[]*Param{param_name},
-		0,
+		false,
 	)
 
 	param_format := contextNewParam(ctx, nil, const_char_type, "format")
@@ -35,7 +35,7 @@ func greet() {
 		"printf",
 		1,
 		[]*Param{param_format},
-		1,
+		true,
 	)
 
 	block := functionNewBlock(fn, "entry")

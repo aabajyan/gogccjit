@@ -135,7 +135,7 @@ var contextCompile func(ctx *Context) *Result
 var resultRelease func(result *Result)
 var contextGetType func(ctx *Context, type_ Types) *Type
 var contextNewParam func(ctx *Context, loc *Location, type_ *Type, name string) *Param
-var contextNewFunction func(ctx *Context, loc *Location, kind FunctionKind, return_type *Type, name string, num_params int, params []*Param, is_variadic int) *Function
+var contextNewFunction func(ctx *Context, loc *Location, kind FunctionKind, return_type *Type, name string, num_params int, params []*Param, is_variadic bool) *Function
 var contextNewStringLiteral func(ctx *Context, value string) *Rvalue
 var functionNewBlock func(fn *Function, name string) *Block
 var blockAddEval func(block *Block, loc *Location, rvalue *Rvalue)
