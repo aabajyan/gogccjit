@@ -2,6 +2,8 @@ package gccjit
 
 import (
 	"errors"
+	"fmt"
+	"runtime"
 
 	"github.com/ebitengine/purego"
 )
@@ -196,8 +198,20 @@ var contextNewFunctionPtrType func(ctx *Context, loc *Location, returnType *Type
 var contextNewCallThroughPtr func(ctx *Context, loc *Location, fnPtr *Rvalue, numArgs int, args []*Rvalue) *Rvalue
 var lvalueAccessField func(structOrUnion *Lvalue, loc *Location, field *Field) *Lvalue
 
+func getLibrary() string {
+	switch runtime.GOOS {
+	case "linux":
+		return "libgccjit.so.0"
+	case "darwin":
+		// FIXME: Replace hardcoded path with something else
+		return "/opt/homebrew/lib/gcc/current/libgccjit.0.dylib"
+	default:
+		panic(fmt.Errorf("GOOS=%s is not supported", runtime.GOOS))
+	}
+}
+
 func init() {
-	lib, err := purego.Dlopen("libgccjit.so.0", purego.RTLD_NOW|purego.RTLD_GLOBAL)
+	lib, err := purego.Dlopen(getLibrary(), purego.RTLD_NOW|purego.RTLD_GLOBAL)
 	if err != nil {
 		panic(err)
 	}

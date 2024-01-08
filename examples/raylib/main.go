@@ -1,8 +1,22 @@
 package main
 
 import (
+	"fmt"
+	"runtime"
+
 	gccjit "github.com/aabajyan/gogccjit/13"
 )
+
+func getLibrary() string {
+	switch runtime.GOOS {
+	case "linux":
+		return "libraylib.so"
+	case "darwin":
+		return "libraylib.dylib"
+	default:
+		panic(fmt.Errorf("GOOS=%s is not supported", runtime.GOOS))
+	}
+}
 
 func main() {
 	ctx := gccjit.ContextAcquire()
@@ -187,7 +201,7 @@ func main() {
 			nil,
 			dlOpenFunc,
 			[]*gccjit.Rvalue{
-				ctx.NewStringLiteral("libraylib.so"),
+				ctx.NewStringLiteral(getLibrary()),
 				ctx.NewRValueFromLong(intType, 0x00001),
 			},
 		),
