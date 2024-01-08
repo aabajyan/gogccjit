@@ -10,15 +10,15 @@ func greet() {
 
 	defer gcc_jit_context_release(ctx)
 
-	gcc_jit_context_set_bool_option(ctx, GCC_JIT_BOOL_OPTION_DEBUGINFO, false)
+	gcc_jit_context_set_bool_option(ctx, BOOL_OPTION_DEBUGINFO, false)
 
-	void_type := gcc_jit_context_get_type(ctx, GCC_JIT_TYPE_VOID)
-	const_char_type := gcc_jit_context_get_type(ctx, GCC_JIT_TYPE_CONST_CHAR_PTR)
+	void_type := gcc_jit_context_get_type(ctx, TYPE_VOID)
+	const_char_type := gcc_jit_context_get_type(ctx, TYPE_CONST_CHAR_PTR)
 	param_name := gcc_jit_context_new_param(ctx, 0, const_char_type, "param")
 	fn := gcc_jit_context_new_function(
 		ctx,
 		0,
-		GCC_JIT_FUNCTION_EXPORTED,
+		FUNCTION_EXPORTED,
 		void_type,
 		"greet",
 		1,
@@ -30,8 +30,8 @@ func greet() {
 	printf_func := gcc_jit_context_new_function(
 		ctx,
 		0,
-		GCC_JIT_FUNCTION_IMPORTED,
-		gcc_jit_context_get_type(ctx, GCC_JIT_TYPE_INT),
+		FUNCTION_IMPORTED,
+		gcc_jit_context_get_type(ctx, TYPE_INT),
 		"printf",
 		1,
 		[]gcc_jit_param{param_format},

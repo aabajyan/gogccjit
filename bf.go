@@ -54,7 +54,7 @@ func (c *bfCompiler) currentDataIsZero(loc gcc_jit_location) gcc_jit_rvalue {
 	return gcc_jit_context_new_comparison(
 		c.ctx,
 		loc,
-		GCC_JIT_COMPARISON_EQ,
+		COMPARISON_EQ,
 		gcc_jit_lvalue_as_rvalue(c.getCurrentData(loc)),
 		c.byte_zero,
 	)
@@ -70,7 +70,7 @@ func (c *bfCompiler) compileChar(ch byte) {
 			c.curblock,
 			loc,
 			c.idx,
-			GCC_JIT_BINARY_OP_PLUS,
+			BINARY_OP_PLUS,
 			c.int_one,
 		)
 	case '<':
@@ -79,7 +79,7 @@ func (c *bfCompiler) compileChar(ch byte) {
 			c.curblock,
 			loc,
 			c.idx,
-			GCC_JIT_BINARY_OP_MINUS,
+			BINARY_OP_MINUS,
 			c.int_one,
 		)
 	case '+':
@@ -88,7 +88,7 @@ func (c *bfCompiler) compileChar(ch byte) {
 			c.curblock,
 			loc,
 			c.getCurrentData(loc),
-			GCC_JIT_BINARY_OP_PLUS,
+			BINARY_OP_PLUS,
 			c.byte_one,
 		)
 	case '-':
@@ -97,7 +97,7 @@ func (c *bfCompiler) compileChar(ch byte) {
 			c.curblock,
 			loc,
 			c.getCurrentData(loc),
-			GCC_JIT_BINARY_OP_MINUS,
+			BINARY_OP_MINUS,
 			c.byte_one,
 		)
 	case '.':
@@ -197,8 +197,8 @@ func (c *bfCompiler) compileChar(ch byte) {
 }
 
 func make_main(ctx gcc_jit_context) gcc_jit_function {
-	int_type := gcc_jit_context_get_type(ctx, GCC_JIT_TYPE_INT)
-	char_ptr_ptr_type := gcc_jit_type_get_pointer(gcc_jit_context_get_type(ctx, GCC_JIT_TYPE_CONST_CHAR_PTR))
+	int_type := gcc_jit_context_get_type(ctx, TYPE_INT)
+	char_ptr_ptr_type := gcc_jit_type_get_pointer(gcc_jit_context_get_type(ctx, TYPE_CONST_CHAR_PTR))
 
 	param_argc := gcc_jit_context_new_param(ctx, 0, int_type, "argc")
 	param_argv := gcc_jit_context_new_param(ctx, 0, char_ptr_ptr_type, "argv")
@@ -206,7 +206,7 @@ func make_main(ctx gcc_jit_context) gcc_jit_function {
 	main_func := gcc_jit_context_new_function(
 		ctx,
 		0,
-		GCC_JIT_FUNCTION_EXPORTED,
+		FUNCTION_EXPORTED,
 		int_type,
 		"main",
 		2,
@@ -238,21 +238,21 @@ func compile_bf(filename string) {
 
 	defer gcc_jit_context_release(c.ctx)
 
-	gcc_jit_context_set_int_option(c.ctx, GCC_JIT_INT_OPTION_OPTIMIZATION_LEVEL, 3)
-	gcc_jit_context_set_bool_option(c.ctx, GCC_JIT_BOOL_OPTION_DUMP_INITIAL_GIMPLE, false)
-	gcc_jit_context_set_bool_option(c.ctx, GCC_JIT_BOOL_OPTION_DEBUGINFO, true)
-	gcc_jit_context_set_bool_option(c.ctx, GCC_JIT_BOOL_OPTION_DUMP_EVERYTHING, false)
-	gcc_jit_context_set_bool_option(c.ctx, GCC_JIT_BOOL_OPTION_KEEP_INTERMEDIATES, false)
+	gcc_jit_context_set_int_option(c.ctx, INT_OPTION_OPTIMIZATION_LEVEL, 3)
+	gcc_jit_context_set_bool_option(c.ctx, BOOL_OPTION_DUMP_INITIAL_GIMPLE, false)
+	gcc_jit_context_set_bool_option(c.ctx, BOOL_OPTION_DEBUGINFO, true)
+	gcc_jit_context_set_bool_option(c.ctx, BOOL_OPTION_DUMP_EVERYTHING, false)
+	gcc_jit_context_set_bool_option(c.ctx, BOOL_OPTION_KEEP_INTERMEDIATES, false)
 
-	c.void_type = gcc_jit_context_get_type(c.ctx, GCC_JIT_TYPE_VOID)
-	c.int_type = gcc_jit_context_get_type(c.ctx, GCC_JIT_TYPE_INT)
-	c.byte_type = gcc_jit_context_get_type(c.ctx, GCC_JIT_TYPE_UNSIGNED_CHAR)
+	c.void_type = gcc_jit_context_get_type(c.ctx, TYPE_VOID)
+	c.int_type = gcc_jit_context_get_type(c.ctx, TYPE_INT)
+	c.byte_type = gcc_jit_context_get_type(c.ctx, TYPE_UNSIGNED_CHAR)
 	c.array_type = gcc_jit_context_new_array_type(c.ctx, 0, c.byte_type, 30000)
 
 	c.func_getchar = gcc_jit_context_new_function(
 		c.ctx,
 		0,
-		GCC_JIT_FUNCTION_IMPORTED,
+		FUNCTION_IMPORTED,
 		c.int_type,
 		"getchar",
 		0,
@@ -264,7 +264,7 @@ func compile_bf(filename string) {
 	c.func_putchar = gcc_jit_context_new_function(
 		c.ctx,
 		0,
-		GCC_JIT_FUNCTION_IMPORTED,
+		FUNCTION_IMPORTED,
 		c.void_type,
 		"putchar",
 		1,
@@ -278,7 +278,7 @@ func compile_bf(filename string) {
 	c.int_one = gcc_jit_context_one(c.ctx, c.int_type)
 	c.byte_zero = gcc_jit_context_zero(c.ctx, c.byte_type)
 	c.byte_one = gcc_jit_context_one(c.ctx, c.byte_type)
-	c.data_cells = gcc_jit_context_new_global(c.ctx, 0, GCC_JIT_GLOBAL_INTERNAL, c.array_type, "data_cells")
+	c.data_cells = gcc_jit_context_new_global(c.ctx, 0, GLOBAL_INTERNAL, c.array_type, "data_cells")
 	c.idx = gcc_jit_function_new_local(c.func_main, 0, c.int_type, "idx")
 
 	gcc_jit_block_add_comment(c.curblock, 0, "idx = 0;")
@@ -292,7 +292,7 @@ func compile_bf(filename string) {
 
 	gcc_jit_block_end_with_return(c.curblock, 0, c.int_zero)
 
-	gcc_jit_context_compile_to_file(c.ctx, GCC_JIT_OUTPUT_KIND_EXECUTABLE, "a.out")
+	gcc_jit_context_compile_to_file(c.ctx, OUTPUT_KIND_EXECUTABLE, "a.out")
 
 	strerr := gcc_jit_context_get_first_error(c.ctx)
 	if strerr != "" {
