@@ -22,7 +22,7 @@ func greet() {
 		void_type,
 		"greet",
 		1,
-		[]Param{param_name},
+		[]*Param{param_name},
 		0,
 	)
 
@@ -34,7 +34,7 @@ func greet() {
 		contextGetType(ctx, TYPE_INT),
 		"printf",
 		1,
-		[]Param{param_format},
+		[]*Param{param_format},
 		1,
 	)
 
@@ -44,7 +44,7 @@ func greet() {
 		nil,
 		printf_func,
 		2,
-		[]Rvalue{contextNewStringLiteral(ctx, "Hello %s from GO!\n"), paramAsRvalue(param_name)},
+		[]*Rvalue{contextNewStringLiteral(ctx, "Hello %s from GO!\n"), paramAsRvalue(param_name)},
 	))
 
 	blockEndWithVoidReturn(block, nil)
