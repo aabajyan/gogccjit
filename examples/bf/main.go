@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	gccjit "github.com/aabajyan/gogccjit/13"
 )
 
 const MAX_OPEN_PARENS = 20
@@ -10,30 +12,30 @@ const MAX_OPEN_PARENS = 20
 type bfCompiler struct {
 	filename     string
 	line, column int
-	ctx          *Context
-	void_type    *Type
-	intType      *Type
-	byteType     *Type
-	array_type   *Type
+	ctx          *gccjit.Context
+	void_type    *gccjit.Type
+	intType      *gccjit.Type
+	byteType     *gccjit.Type
+	array_type   *gccjit.Type
 
-	funcGetchar *Function
-	funcPutchar *Function
-	funcMain    *Function
+	funcGetchar *gccjit.Function
+	funcPutchar *gccjit.Function
+	funcMain    *gccjit.Function
 
-	curblock *Block
+	curblock *gccjit.Block
 
-	intZero   *Rvalue
-	intOne    *Rvalue
-	byteZero  *Rvalue
-	byteOne   *Rvalue
-	dataCells *Lvalue
-	idx       *Lvalue
+	intZero   *gccjit.Rvalue
+	intOne    *gccjit.Rvalue
+	byteZero  *gccjit.Rvalue
+	byteOne   *gccjit.Rvalue
+	dataCells *gccjit.Lvalue
+	idx       *gccjit.Lvalue
 
 	numOpenParens int
 
-	parenTest  []*Block
-	parenBody  []*Block
-	parenAfter []*Block
+	parenTest  []*gccjit.Block
+	parenBody  []*gccjit.Block
+	parenAfter []*gccjit.Block
 }
 
 func (c *bfCompiler) fatalError(msg string) {
@@ -41,7 +43,7 @@ func (c *bfCompiler) fatalError(msg string) {
 	os.Exit(1)
 }
 
-func (c *bfCompiler) getCurrentData(loc *Location) *Lvalue {
+func (c *bfCompiler) getCurrentData(loc *gccjit.Location) *gccjit.Lvalue {
 	return c.ctx.NewArrayAccess(
 		loc,
 		c.dataCells.AsRvalue(),
@@ -49,10 +51,10 @@ func (c *bfCompiler) getCurrentData(loc *Location) *Lvalue {
 	)
 }
 
-func (c *bfCompiler) currentDataIsZero(loc *Location) *Rvalue {
+func (c *bfCompiler) currentDataIsZero(loc *gccjit.Location) *gccjit.Rvalue {
 	return c.ctx.NewNewComparison(
 		loc,
-		COMPARISON_EQ,
+		gccjit.COMPARISON_EQ,
 		c.getCurrentData(loc).AsRvalue(),
 		c.byteZero,
 	)
@@ -67,7 +69,7 @@ func (c *bfCompiler) compileChar(ch byte) {
 		c.curblock.AddAssignmentOp(
 			loc,
 			c.idx,
-			BINARY_OP_PLUS,
+			gccjit.BINARY_OP_PLUS,
 			c.intOne,
 		)
 	case '<':
@@ -75,7 +77,7 @@ func (c *bfCompiler) compileChar(ch byte) {
 		c.curblock.AddAssignmentOp(
 			loc,
 			c.idx,
-			BINARY_OP_MINUS,
+			gccjit.BINARY_OP_MINUS,
 			c.intOne,
 		)
 	case '+':
@@ -83,7 +85,7 @@ func (c *bfCompiler) compileChar(ch byte) {
 		c.curblock.AddAssignmentOp(
 			loc,
 			c.getCurrentData(loc),
-			BINARY_OP_PLUS,
+			gccjit.BINARY_OP_PLUS,
 			c.byteOne,
 		)
 	case '-':
@@ -91,7 +93,7 @@ func (c *bfCompiler) compileChar(ch byte) {
 		c.curblock.AddAssignmentOp(
 			loc,
 			c.getCurrentData(loc),
-			BINARY_OP_MINUS,
+			gccjit.BINARY_OP_MINUS,
 			c.byteOne,
 		)
 	case '.':
@@ -104,7 +106,7 @@ func (c *bfCompiler) compileChar(ch byte) {
 		call := c.ctx.NewCall(
 			loc,
 			c.funcPutchar,
-			[]*Rvalue{arg},
+			[]*gccjit.Rvalue{arg},
 		)
 
 		c.curblock.AddComment(loc, "'.': putchar(data[idx]);")
@@ -113,7 +115,7 @@ func (c *bfCompiler) compileChar(ch byte) {
 		call := c.ctx.NewCall(
 			loc,
 			c.funcGetchar,
-			[]*Rvalue{},
+			[]*gccjit.Rvalue{},
 		)
 
 		c.curblock.AddComment(loc, "',': data[idx] = getchar();")
@@ -168,30 +170,36 @@ func (c *bfCompiler) compileChar(ch byte) {
 	}
 }
 
-func makeMain(ctx *Context) *Function {
-	intType := ctx.GetType(TYPE_INT)
-	charPtrPtrType := ctx.GetType(TYPE_CONST_CHAR_PTR).GetPointer()
+func makeMain(ctx *gccjit.Context) *gccjit.Function {
+	intType := ctx.GetType(gccjit.TYPE_INT)
+	charPtrPtrType := ctx.GetType(gccjit.TYPE_CONST_CHAR_PTR).GetPointer()
 
 	paramArgc := ctx.NewParam(nil, intType, "argc")
 	paramArgv := ctx.NewParam(nil, charPtrPtrType, "argv")
 	mainFunc := ctx.NewFunction(
 		nil,
-		FUNCTION_EXPORTED,
+		gccjit.FUNCTION_EXPORTED,
 		intType,
 		"main",
-		[]*Param{paramArgc, paramArgv},
+		[]*gccjit.Param{paramArgc, paramArgv},
 		false,
 	)
 
 	return mainFunc
 }
 
-func compile_bf(filename string) {
+func main() {
+	if len(os.Args) < 2 {
+		panic("usage go run ./examples/bf/main.go ./examples/bf/example.bf")
+	}
+
+	filename := os.Args[1]
+
 	c := bfCompiler{
 		filename:   filename,
-		parenTest:  make([]*Block, MAX_OPEN_PARENS),
-		parenBody:  make([]*Block, MAX_OPEN_PARENS),
-		parenAfter: make([]*Block, MAX_OPEN_PARENS),
+		parenTest:  make([]*gccjit.Block, MAX_OPEN_PARENS),
+		parenBody:  make([]*gccjit.Block, MAX_OPEN_PARENS),
+		parenAfter: make([]*gccjit.Block, MAX_OPEN_PARENS),
 	}
 
 	code, err := os.ReadFile(filename)
@@ -201,39 +209,39 @@ func compile_bf(filename string) {
 
 	c.line = 1
 
-	if c.ctx = ContextAcquire(); c.ctx == nil {
+	if c.ctx = gccjit.ContextAcquire(); c.ctx == nil {
 		panic("failed to acquire context")
 	}
 
 	defer c.ctx.Release()
 
-	c.ctx.SetIntOption(INT_OPTION_OPTIMIZATION_LEVEL, 3)
-	c.ctx.SetBoolOption(BOOL_OPTION_DUMP_INITIAL_GIMPLE, false)
-	c.ctx.SetBoolOption(BOOL_OPTION_DEBUGINFO, true)
-	c.ctx.SetBoolOption(BOOL_OPTION_DUMP_EVERYTHING, false)
-	c.ctx.SetBoolOption(BOOL_OPTION_KEEP_INTERMEDIATES, false)
+	c.ctx.SetIntOption(gccjit.INT_OPTION_OPTIMIZATION_LEVEL, 3)
+	c.ctx.SetBoolOption(gccjit.BOOL_OPTION_DUMP_INITIAL_GIMPLE, false)
+	c.ctx.SetBoolOption(gccjit.BOOL_OPTION_DEBUGINFO, true)
+	c.ctx.SetBoolOption(gccjit.BOOL_OPTION_DUMP_EVERYTHING, false)
+	c.ctx.SetBoolOption(gccjit.BOOL_OPTION_KEEP_INTERMEDIATES, false)
 
-	c.void_type = c.ctx.GetType(TYPE_VOID)
-	c.intType = c.ctx.GetType(TYPE_INT)
-	c.byteType = c.ctx.GetType(TYPE_UNSIGNED_CHAR)
+	c.void_type = c.ctx.GetType(gccjit.TYPE_VOID)
+	c.intType = c.ctx.GetType(gccjit.TYPE_INT)
+	c.byteType = c.ctx.GetType(gccjit.TYPE_UNSIGNED_CHAR)
 	c.array_type = c.ctx.GetArrayType(nil, c.byteType, 30000)
 
 	c.funcGetchar = c.ctx.NewFunction(
 		nil,
-		FUNCTION_IMPORTED,
+		gccjit.FUNCTION_IMPORTED,
 		c.intType,
 		"getchar",
-		[]*Param{},
+		[]*gccjit.Param{},
 		false,
 	)
 
 	paramC := c.ctx.NewParam(nil, c.intType, "c")
 	c.funcPutchar = c.ctx.NewFunction(
 		nil,
-		FUNCTION_IMPORTED,
+		gccjit.FUNCTION_IMPORTED,
 		c.void_type,
 		"putchar",
-		[]*Param{paramC},
+		[]*gccjit.Param{paramC},
 		false,
 	)
 
@@ -243,7 +251,7 @@ func compile_bf(filename string) {
 	c.intOne = c.ctx.One(c.intType)
 	c.byteZero = c.ctx.Zero(c.byteType)
 	c.byteOne = c.ctx.One(c.byteType)
-	c.dataCells = c.ctx.NewGlobal(nil, GLOBAL_INTERNAL, c.array_type, "dataCells")
+	c.dataCells = c.ctx.NewGlobal(nil, gccjit.GLOBAL_INTERNAL, c.array_type, "dataCells")
 	c.idx = c.funcMain.NewLocal(nil, c.intType, "idx")
 
 	c.curblock.AddComment(nil, "idx = 0;")
@@ -256,7 +264,7 @@ func compile_bf(filename string) {
 	}
 
 	c.curblock.EndWithReturn(nil, c.intZero)
-	c.ctx.CompileToFile(OUTPUT_KIND_EXECUTABLE, "a.out")
+	c.ctx.CompileToFile(gccjit.OUTPUT_KIND_EXECUTABLE, "a.out")
 
 	if strerr := c.ctx.GetFirstError(); strerr != "" {
 		println(strerr)

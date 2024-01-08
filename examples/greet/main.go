@@ -1,25 +1,27 @@
 package main
 
-import "github.com/ebitengine/purego"
+import (
+	gccjit "github.com/aabajyan/gogccjit/13"
+)
 
-func greet() {
-	ctx := ContextAcquire()
+func main() {
+	ctx := gccjit.ContextAcquire()
 	if ctx == nil {
 		panic("no context")
 	}
 
 	defer ctx.Release()
 
-	ctx.SetBoolOption(BOOL_OPTION_DEBUGINFO, false)
+	ctx.SetBoolOption(gccjit.BOOL_OPTION_DEBUGINFO, false)
 
-	voidType := ctx.GetType(TYPE_VOID)
-	constCharType := ctx.GetType(TYPE_CONST_CHAR_PTR)
+	voidType := ctx.GetType(gccjit.TYPE_VOID)
+	constCharType := ctx.GetType(gccjit.TYPE_CONST_CHAR_PTR)
 
 	paramName := ctx.NewParam(nil, constCharType, "param")
-	fn := ctx.NewFunction(nil, FUNCTION_EXPORTED, voidType, "greet", []*Param{paramName}, false)
+	fn := ctx.NewFunction(nil, gccjit.FUNCTION_EXPORTED, voidType, "greet", []*gccjit.Param{paramName}, false)
 
 	paramFormat := ctx.NewParam(nil, constCharType, "format")
-	printfFunc := ctx.NewFunction(nil, FUNCTION_IMPORTED, voidType, "printf", []*Param{paramFormat}, true)
+	printfFunc := ctx.NewFunction(nil, gccjit.FUNCTION_IMPORTED, voidType, "printf", []*gccjit.Param{paramFormat}, true)
 
 	block := ctx.NewBlock(fn, "entry")
 	block.AddEval(
@@ -27,7 +29,7 @@ func greet() {
 		ctx.NewCall(
 			nil,
 			printfFunc,
-			[]*Rvalue{
+			[]*gccjit.Rvalue{
 				ctx.NewStringLiteral("Hello %s from GO!\n"),
 				paramName.AsRvalue(),
 			},
@@ -44,7 +46,7 @@ func greet() {
 	defer res.Release()
 
 	var greet func(name string)
-	ptr := res.GetCode("greet")
-	purego.RegisterFunc(&greet, ptr)
+	res.RegisterFunc("greet", &greet)
+
 	greet("world")
 }

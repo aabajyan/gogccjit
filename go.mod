@@ -1,4 +1,4 @@
-module github.com/aabajyan/libgccjit
+module github.com/aabajyan/gogccjit
 
 go 1.21.5
 
