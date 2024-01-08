@@ -200,12 +200,12 @@ func make_main(ctx Context) Function {
 	int_type := contextGetType(ctx, TYPE_INT)
 	char_ptr_ptr_type := typeGetPointer(contextGetType(ctx, TYPE_CONST_CHAR_PTR))
 
-	param_argc := contextNewParam(ctx, 0, int_type, "argc")
-	param_argv := contextNewParam(ctx, 0, char_ptr_ptr_type, "argv")
+	param_argc := contextNewParam(ctx, nil, int_type, "argc")
+	param_argv := contextNewParam(ctx, nil, char_ptr_ptr_type, "argv")
 
 	main_func := contextNewFunction(
 		ctx,
-		0,
+		nil,
 		FUNCTION_EXPORTED,
 		int_type,
 		"main",
@@ -232,7 +232,7 @@ func compile_bf(filename string) {
 
 	c.line = 1
 
-	if c.ctx = contextAcquire(); c.ctx == 0 {
+	if c.ctx = contextAcquire(); c.ctx == nil {
 		panic("failed to acquire context")
 	}
 
@@ -247,11 +247,11 @@ func compile_bf(filename string) {
 	c.void_type = contextGetType(c.ctx, TYPE_VOID)
 	c.int_type = contextGetType(c.ctx, TYPE_INT)
 	c.byte_type = contextGetType(c.ctx, TYPE_UNSIGNED_CHAR)
-	c.array_type = contextNewArrayType(c.ctx, 0, c.byte_type, 30000)
+	c.array_type = contextNewArrayType(c.ctx, nil, c.byte_type, 30000)
 
 	c.func_getchar = contextNewFunction(
 		c.ctx,
-		0,
+		nil,
 		FUNCTION_IMPORTED,
 		c.int_type,
 		"getchar",
@@ -260,10 +260,10 @@ func compile_bf(filename string) {
 		0,
 	)
 
-	param_c := contextNewParam(c.ctx, 0, c.int_type, "c")
+	param_c := contextNewParam(c.ctx, nil, c.int_type, "c")
 	c.func_putchar = contextNewFunction(
 		c.ctx,
-		0,
+		nil,
 		FUNCTION_IMPORTED,
 		c.void_type,
 		"putchar",
@@ -278,11 +278,11 @@ func compile_bf(filename string) {
 	c.int_one = contextOne(c.ctx, c.int_type)
 	c.byte_zero = contextZero(c.ctx, c.byte_type)
 	c.byte_one = contextOne(c.ctx, c.byte_type)
-	c.data_cells = contextNewGlobal(c.ctx, 0, GLOBAL_INTERNAL, c.array_type, "data_cells")
-	c.idx = functionNewLocal(c.func_main, 0, c.int_type, "idx")
+	c.data_cells = contextNewGlobal(c.ctx, nil, GLOBAL_INTERNAL, c.array_type, "data_cells")
+	c.idx = functionNewLocal(c.func_main, nil, c.int_type, "idx")
 
-	blockAddComment(c.curblock, 0, "idx = 0;")
-	blockAddAssignment(c.curblock, 0, c.idx, c.int_zero)
+	blockAddComment(c.curblock, nil, "idx = 0;")
+	blockAddAssignment(c.curblock, nil, c.idx, c.int_zero)
 
 	c.num_open_parens = 0
 
@@ -290,7 +290,7 @@ func compile_bf(filename string) {
 		c.compileChar(ch)
 	}
 
-	blockEndWithReturn(c.curblock, 0, c.int_zero)
+	blockEndWithReturn(c.curblock, nil, c.int_zero)
 
 	contextCompileToFile(c.ctx, OUTPUT_KIND_EXECUTABLE, "a.out")
 

@@ -2,18 +2,18 @@ package main
 
 import "github.com/ebitengine/purego"
 
-type Function uintptr
-type Param uintptr
-type Location uintptr
-type Context uintptr
-type Result uintptr
+type Function *uint
+type Param *uint
+type Location *uint
+type Context *uint
+type Result *uint
 type BoolOption int
 type Types int
 type FunctionKind int
-type Type uintptr
-type Rvalue uintptr
-type Lvalue uintptr
-type Block uintptr
+type Type *uint
+type Rvalue *uint
+type Lvalue *uint
+type Block *uint
 type OutputKind int
 type Comparison int
 type BinaryOp int
