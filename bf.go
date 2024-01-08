@@ -239,10 +239,10 @@ func compile_bf(filename string) {
 	defer gcc_jit_context_release(c.ctx)
 
 	gcc_jit_context_set_int_option(c.ctx, GCC_JIT_INT_OPTION_OPTIMIZATION_LEVEL, 3)
-	gcc_jit_context_set_bool_option(c.ctx, GCC_JIT_BOOL_OPTION_DUMP_INITIAL_GIMPLE, 0)
-	gcc_jit_context_set_bool_option(c.ctx, GCC_JIT_BOOL_OPTION_DEBUGINFO, 1)
-	gcc_jit_context_set_bool_option(c.ctx, GCC_JIT_BOOL_OPTION_DUMP_EVERYTHING, 0)
-	gcc_jit_context_set_bool_option(c.ctx, GCC_JIT_BOOL_OPTION_KEEP_INTERMEDIATES, 0)
+	gcc_jit_context_set_bool_option(c.ctx, GCC_JIT_BOOL_OPTION_DUMP_INITIAL_GIMPLE, false)
+	gcc_jit_context_set_bool_option(c.ctx, GCC_JIT_BOOL_OPTION_DEBUGINFO, true)
+	gcc_jit_context_set_bool_option(c.ctx, GCC_JIT_BOOL_OPTION_DUMP_EVERYTHING, false)
+	gcc_jit_context_set_bool_option(c.ctx, GCC_JIT_BOOL_OPTION_KEEP_INTERMEDIATES, false)
 
 	c.void_type = gcc_jit_context_get_type(c.ctx, GCC_JIT_TYPE_VOID)
 	c.int_type = gcc_jit_context_get_type(c.ctx, GCC_JIT_TYPE_INT)

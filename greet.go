@@ -10,7 +10,7 @@ func greet() {
 
 	defer gcc_jit_context_release(ctx)
 
-	gcc_jit_context_set_bool_option(ctx, GCC_JIT_BOOL_OPTION_DEBUGINFO, 0)
+	gcc_jit_context_set_bool_option(ctx, GCC_JIT_BOOL_OPTION_DEBUGINFO, false)
 
 	void_type := gcc_jit_context_get_type(ctx, GCC_JIT_TYPE_VOID)
 	const_char_type := gcc_jit_context_get_type(ctx, GCC_JIT_TYPE_CONST_CHAR_PTR)

@@ -119,7 +119,7 @@ const (
 
 var gcc_jit_context_acquire func() gcc_jit_context
 var gcc_jit_context_release func(ctx gcc_jit_context)
-var gcc_jit_context_set_bool_option func(ctx gcc_jit_context, opt gcc_jit_bool_option, value int) uintptr
+var gcc_jit_context_set_bool_option func(ctx gcc_jit_context, opt gcc_jit_bool_option, value bool) uintptr
 var gcc_jit_context_compile func(ctx gcc_jit_context) gcc_jit_result
 var gcc_jit_result_release func(ctx gcc_jit_result)
 var gcc_jit_context_get_type func(ctx gcc_jit_context, type_ gcc_jit_types) gcc_jit_type
