@@ -219,19 +219,11 @@ func (c *Context) GetType(type_ Types) *Type {
 	return contextGetType(c, type_)
 }
 
-func (c *Context) NewFunction(kind FunctionKind, return_type *Type, name string, params []*Param, isVariadic bool) *Function {
-	return contextNewFunction(c, nil, kind, return_type, name, len(params), params, isVariadic)
-}
-
-func (c *Context) NewFunctionWithLocation(loc *Location, name string, kind FunctionKind, return_type *Type, params []*Param, isVariadic bool) *Function {
+func (c *Context) NewFunction(loc *Location, kind FunctionKind, return_type *Type, name string, params []*Param, isVariadic bool) *Function {
 	return contextNewFunction(c, loc, kind, return_type, name, len(params), params, isVariadic)
 }
 
-func (c *Context) NewParam(type_ *Type, name string) *Param {
-	return contextNewParam(c, nil, type_, name)
-}
-
-func (c *Context) NewParamWithLocaction(loc *Location, type_ *Type, name string) *Param {
+func (c *Context) NewParam(loc *Location, type_ *Type, name string) *Param {
 	return contextNewParam(c, loc, type_, name)
 }
 
@@ -239,16 +231,16 @@ func (c *Context) NewBlock(fn *Function, name string) *Block {
 	return functionNewBlock(fn, name)
 }
 
-func (c *Context) NewCall(fn *Function, args []*Rvalue) *Rvalue {
-	return contextNewCall(c, nil, fn, len(args), args)
-}
-
-func (c *Context) NewCallWithLocation(loc *Location, fn *Function, args []*Rvalue) *Rvalue {
+func (c *Context) NewCall(loc *Location, fn *Function, args []*Rvalue) *Rvalue {
 	return contextNewCall(c, loc, fn, len(args), args)
 }
 
 func (c *Context) NewStringLiteral(value string) *Rvalue {
 	return contextNewStringLiteral(c, value)
+}
+
+func (c *Context) NewArrayAccess(ptr *Rvalue, idx *Rvalue) *Lvalue {
+	return contextNewArrayAccess(c, nil, ptr, idx)
 }
 
 func (c *Context) Compile() *Result {
@@ -263,11 +255,7 @@ func (p *Param) AsRvalue() *Rvalue {
 	return paramAsRvalue(p)
 }
 
-func (b *Block) AddEval(rvalue *Rvalue) {
-	blockAddEval(b, nil, rvalue)
-}
-
-func (b *Block) AddEvalWithLocation(loc *Location, rvalue *Rvalue) {
+func (b *Block) AddEval(loc *Location, rvalue *Rvalue) {
 	blockAddEval(b, loc, rvalue)
 }
 

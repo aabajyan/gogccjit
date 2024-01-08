@@ -15,15 +15,17 @@ func greet() {
 	voidType := ctx.GetType(TYPE_VOID)
 	constCharType := ctx.GetType(TYPE_CONST_CHAR_PTR)
 
-	paramName := ctx.NewParam(constCharType, "param")
-	fn := ctx.NewFunction(FUNCTION_EXPORTED, voidType, "greet", []*Param{paramName}, false)
+	paramName := ctx.NewParam(nil, constCharType, "param")
+	fn := ctx.NewFunction(nil, FUNCTION_EXPORTED, voidType, "greet", []*Param{paramName}, false)
 
-	paramFormat := ctx.NewParam(constCharType, "format")
-	printfFunc := ctx.NewFunction(FUNCTION_IMPORTED, voidType, "printf", []*Param{paramFormat}, true)
+	paramFormat := ctx.NewParam(nil, constCharType, "format")
+	printfFunc := ctx.NewFunction(nil, FUNCTION_IMPORTED, voidType, "printf", []*Param{paramFormat}, true)
 
 	block := ctx.NewBlock(fn, "entry")
 	block.AddEval(
+		nil,
 		ctx.NewCall(
+			nil,
 			printfFunc,
 			[]*Rvalue{
 				ctx.NewStringLiteral("Hello %s from GO!\n"),
