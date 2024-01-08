@@ -26,6 +26,7 @@ type RvaluePtr = *Rvalue
 type LvaluePtr = *Lvalue
 type BlockPtr = *Block
 
+type StrOption int
 type BoolOption int
 type Types int
 type FunctionKind int
@@ -34,6 +35,11 @@ type Comparison int
 type BinaryOp int
 type IntOption int
 type GlobalKind int
+
+const (
+	GCC_JIT_STR_OPTION_PROGNAME StrOption = iota
+	GCC_JIT_NUM_STR_OPTIONS
+)
 
 const (
 	BOOL_OPTION_DEBUGINFO BoolOption = iota
@@ -134,7 +140,8 @@ const (
 
 var contextAcquire func() *Context
 var contextRelease func(ctx *Context)
-var contextSetBoolOption func(ctx *Context, opt BoolOption, value bool) uintptr
+var contextSetStrOption func(ctx *Context, opt StrOption, value string)
+var contextSetBoolOption func(ctx *Context, opt BoolOption, value bool)
 var contextCompile func(ctx *Context) *Result
 var resultRelease func(result *Result)
 var contextGetType func(ctx *Context, typ Types) *Type
@@ -215,6 +222,7 @@ func init() {
 	purego.RegisterLibFunc(&contextGetLastError, lib, "gcc_jit_context_get_last_error")
 	purego.RegisterLibFunc(&contextDumpToFile, lib, "gcc_jit_context_dump_to_file")
 	purego.RegisterLibFunc(&contextDumpReproducerToFile, lib, "gcc_jit_context_dump_reproducer_to_file")
+	purego.RegisterLibFunc(&contextSetStrOption, lib, "gcc_jit_context_set_str_option")
 }
 
 func ContextAcquire() *Context {
@@ -227,6 +235,10 @@ func (c *Context) SetBoolOption(opt BoolOption, value bool) {
 
 func (c *Context) SetIntOption(opt IntOption, value int) {
 	contextSetIntOption(c, opt, value)
+}
+
+func (c *Context) SetStrOption(opt StrOption, value string) {
+	contextSetStrOption(c, opt, value)
 }
 
 func (c *Context) GetType(typ Types) *Type {
