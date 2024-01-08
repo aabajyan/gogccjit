@@ -1,6 +1,10 @@
 package gccjit
 
-import "github.com/ebitengine/purego"
+import (
+	"errors"
+
+	"github.com/ebitengine/purego"
+)
 
 type Function uint
 type Param uint
@@ -163,6 +167,7 @@ var contextNewGlobal func(ctx *Context, loc *Location, kind GlobalKind, typ *Typ
 var functionNewLocal func(fn *Function, loc *Location, typ *Type, name string) *Lvalue
 var blockEndWithReturn func(block *Block, loc *Location, rvalue *Rvalue)
 var contextGetFirstError func(ctx *Context) string
+var contextGetLastError func(ctx *Context) string
 
 func init() {
 	lib, err := purego.Dlopen("libgccjit.so.0", purego.RTLD_NOW|purego.RTLD_GLOBAL)
@@ -205,6 +210,7 @@ func init() {
 	purego.RegisterLibFunc(&functionNewLocal, lib, "gcc_jit_function_new_local")
 	purego.RegisterLibFunc(&blockEndWithReturn, lib, "gcc_jit_block_end_with_return")
 	purego.RegisterLibFunc(&contextGetFirstError, lib, "gcc_jit_context_get_first_error")
+	purego.RegisterLibFunc(&contextGetLastError, lib, "gcc_jit_context_get_last_error")
 }
 
 func ContextAcquire() *Context {
@@ -275,12 +281,21 @@ func (c *Context) One(typ *Type) *Rvalue {
 	return contextOne(c, typ)
 }
 
-func (c *Context) Compile() *Result {
-	return contextCompile(c)
+func (c *Context) Compile() (*Result, error) {
+	res := contextCompile(c)
+	if res == nil {
+		return nil, errors.New(c.GetLastError())
+	}
+
+	return res, nil
 }
 
 func (c *Context) GetFirstError() string {
 	return contextGetFirstError(c)
+}
+
+func (c *Context) GetLastError() string {
+	return contextGetLastError(c)
 }
 
 func (c *Context) CompileToFile(outputKind OutputKind, outputPath string) {
