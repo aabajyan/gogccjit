@@ -10,30 +10,30 @@ const MAX_OPEN_PARENS = 20
 type bfCompiler struct {
 	filename     string
 	line, column int
-	ctx          Context
-	void_type    Type
-	int_type     Type
-	byte_type    Type
-	array_type   Type
+	ctx          *Context
+	void_type    *Type
+	int_type     *Type
+	byte_type    *Type
+	array_type   *Type
 
-	func_getchar Function
-	func_putchar Function
-	func_main    Function
+	func_getchar *Function
+	func_putchar *Function
+	func_main    *Function
 
-	curblock Block
+	curblock *Block
 
-	int_zero   Rvalue
-	int_one    Rvalue
-	byte_zero  Rvalue
-	byte_one   Rvalue
-	data_cells Lvalue
-	idx        Lvalue
+	int_zero   *Rvalue
+	int_one    *Rvalue
+	byte_zero  *Rvalue
+	byte_one   *Rvalue
+	data_cells *Lvalue
+	idx        *Lvalue
 
 	num_open_parens int
 
-	paren_test  []Block
-	paren_body  []Block
-	paren_after []Block
+	paren_test  []*Block
+	paren_body  []*Block
+	paren_after []*Block
 }
 
 func (c *bfCompiler) fatalError(msg string) {
@@ -41,7 +41,7 @@ func (c *bfCompiler) fatalError(msg string) {
 	os.Exit(1)
 }
 
-func (c *bfCompiler) getCurrentData(loc Location) Lvalue {
+func (c *bfCompiler) getCurrentData(loc *Location) *Lvalue {
 	return contextNewArrayAccess(
 		c.ctx,
 		loc,
@@ -50,7 +50,7 @@ func (c *bfCompiler) getCurrentData(loc Location) Lvalue {
 	)
 }
 
-func (c *bfCompiler) currentDataIsZero(loc Location) Rvalue {
+func (c *bfCompiler) currentDataIsZero(loc *Location) *Rvalue {
 	return contextNewComparison(
 		c.ctx,
 		loc,
@@ -113,7 +113,7 @@ func (c *bfCompiler) compileChar(ch byte) {
 			loc,
 			c.func_putchar,
 			1,
-			[]Rvalue{arg},
+			[]*Rvalue{arg},
 		)
 
 		blockAddComment(c.curblock, loc, "'.': putchar(data[idx]);")
@@ -124,7 +124,7 @@ func (c *bfCompiler) compileChar(ch byte) {
 			loc,
 			c.func_getchar,
 			0,
-			[]Rvalue{},
+			[]*Rvalue{},
 		)
 
 		blockAddComment(c.curblock, loc, "',': data[idx] = getchar();")
@@ -196,7 +196,7 @@ func (c *bfCompiler) compileChar(ch byte) {
 	}
 }
 
-func make_main(ctx Context) Function {
+func make_main(ctx *Context) *Function {
 	int_type := contextGetType(ctx, TYPE_INT)
 	char_ptr_ptr_type := typeGetPointer(contextGetType(ctx, TYPE_CONST_CHAR_PTR))
 
@@ -210,7 +210,7 @@ func make_main(ctx Context) Function {
 		int_type,
 		"main",
 		2,
-		[]Param{param_argc, param_argv},
+		[]*Param{param_argc, param_argv},
 		0,
 	)
 
@@ -220,9 +220,9 @@ func make_main(ctx Context) Function {
 func compile_bf(filename string) {
 	c := bfCompiler{
 		filename:    filename,
-		paren_test:  make([]Block, MAX_OPEN_PARENS),
-		paren_body:  make([]Block, MAX_OPEN_PARENS),
-		paren_after: make([]Block, MAX_OPEN_PARENS),
+		paren_test:  make([]*Block, MAX_OPEN_PARENS),
+		paren_body:  make([]*Block, MAX_OPEN_PARENS),
+		paren_after: make([]*Block, MAX_OPEN_PARENS),
 	}
 
 	code, err := os.ReadFile(filename)
@@ -256,7 +256,7 @@ func compile_bf(filename string) {
 		c.int_type,
 		"getchar",
 		0,
-		[]Param{},
+		[]*Param{},
 		0,
 	)
 
@@ -268,7 +268,7 @@ func compile_bf(filename string) {
 		c.void_type,
 		"putchar",
 		1,
-		[]Param{param_c},
+		[]*Param{param_c},
 		0,
 	)
 

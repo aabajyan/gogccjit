@@ -2,18 +2,29 @@ package main
 
 import "github.com/ebitengine/purego"
 
-type Function *uint
-type Param *uint
-type Location *uint
-type Context *uint
-type Result *uint
+type Function uint
+type Param uint
+type Location uint
+type Context uint
+type Result uint
+type Type uint
+type Rvalue uint
+type Lvalue uint
+type Block uint
+
+type FunctionPtr = *Function
+type ParamPtr = *Param
+type LocationPtr = *Location
+type ContextPtr = *Context
+type ResultPtr = *Result
+type TypePtr = *Type
+type RvaluePtr = *Rvalue
+type LvaluePtr = *Lvalue
+type BlockPtr = *Block
+
 type BoolOption int
 type Types int
 type FunctionKind int
-type Type *uint
-type Rvalue *uint
-type Lvalue *uint
-type Block *uint
 type OutputKind int
 type Comparison int
 type BinaryOp int
@@ -117,41 +128,41 @@ const (
 	GLOBAL_IMPORTED
 )
 
-var contextAcquire func() Context
-var contextRelease func(ctx Context)
-var contextSetBoolOption func(ctx Context, opt BoolOption, value bool) uintptr
-var contextCompile func(ctx Context) Result
-var resultRelease func(ctx Result)
-var contextGetType func(ctx Context, type_ Types) Type
-var contextNewParam func(ctx Context, loc Location, type_ Type, name string) Param
-var contextNewFunction func(ctx Context, loc Location, kind FunctionKind, return_type Type, name string, num_params int, params []Param, is_variadic int) Function
-var contextNewStringLiteral func(ctx Context, value string) Rvalue
-var functionNewBlock func(fn Function, name string) Block
-var blockAddEval func(block Block, loc Location, rvalue Rvalue)
-var contextNewCall func(ctx Context, loc Location, fn Function, numargs int, args []Rvalue) Rvalue
-var blockEndWithVoidReturn func(block Block, loc Location)
-var resultGetCode func(result Result, name string) uintptr
-var paramAsRvalue func(param Param) Rvalue
-var contextCompileToFile func(ctx Context, output_kind OutputKind, output_path string)
-var contextNewArrayAccess func(ctx Context, loc Location, ptr Rvalue, idx Rvalue) Lvalue
-var lvalueAsRvalue func(lvalue Lvalue) Rvalue
-var contextNewComparison func(ctx Context, loc Location, op Comparison, lhs Rvalue, rhs Rvalue) Rvalue
-var contextNewLocation func(ctx Context, filename string, line, column int) Location
-var blockAddComment func(block Block, loc Location, text string)
-var blockAddAssignmentOp func(block Block, loc Location, lvalue Lvalue, op BinaryOp, rvalue Rvalue)
-var contextNewCast func(ctx Context, loc Location, rvalue Rvalue, type_ Type) Rvalue
-var blockAddAssignment func(block Block, loc Location, lvalue Lvalue, rvalue Rvalue)
-var blockEndWithJump func(block Block, loc Location, target Block)
-var blockEndWithConditional func(block Block, loc Location, boolval Rvalue, on_true Block, on_false Block)
-var contextSetIntOption func(ctx Context, opt IntOption, value int)
-var contextNewArrayType func(ctx Context, loc Location, element_type Type, num_elements int) Type
-var typeGetPointer func(type_ Type) Type
-var contextZero func(ctx Context, type_ Type) Rvalue
-var contextOne func(ctx Context, type_ Type) Rvalue
-var contextNewGlobal func(ctx Context, loc Location, kind GlobalKind, type_ Type, name string) Lvalue
-var functionNewLocal func(fn Function, loc Location, type_ Type, name string) Lvalue
-var blockEndWithReturn func(block Block, loc Location, rvalue Rvalue)
-var contextGetFirstError func(ctx Context) string
+var contextAcquire func() *Context
+var contextRelease func(ctx *Context)
+var contextSetBoolOption func(ctx *Context, opt BoolOption, value bool) uintptr
+var contextCompile func(ctx *Context) *Result
+var resultRelease func(result *Result)
+var contextGetType func(ctx *Context, type_ Types) *Type
+var contextNewParam func(ctx *Context, loc *Location, type_ *Type, name string) *Param
+var contextNewFunction func(ctx *Context, loc *Location, kind FunctionKind, return_type *Type, name string, num_params int, params []*Param, is_variadic int) *Function
+var contextNewStringLiteral func(ctx *Context, value string) *Rvalue
+var functionNewBlock func(fn *Function, name string) *Block
+var blockAddEval func(block *Block, loc *Location, rvalue *Rvalue)
+var contextNewCall func(ctx *Context, loc *Location, fn *Function, numargs int, args []*Rvalue) *Rvalue
+var blockEndWithVoidReturn func(block *Block, loc *Location)
+var resultGetCode func(result *Result, name string) uintptr
+var paramAsRvalue func(param *Param) *Rvalue
+var contextCompileToFile func(ctx *Context, output_kind OutputKind, output_path string)
+var contextNewArrayAccess func(ctx *Context, loc *Location, ptr *Rvalue, idx *Rvalue) *Lvalue
+var lvalueAsRvalue func(lvalue *Lvalue) *Rvalue
+var contextNewComparison func(ctx *Context, loc *Location, op Comparison, lhs *Rvalue, rhs *Rvalue) *Rvalue
+var contextNewLocation func(ctx *Context, filename string, line, column int) *Location
+var blockAddComment func(block *Block, loc *Location, text string)
+var blockAddAssignmentOp func(block *Block, loc *Location, lvalue *Lvalue, op BinaryOp, rvalue *Rvalue)
+var contextNewCast func(ctx *Context, loc *Location, rvalue *Rvalue, type_ *Type) *Rvalue
+var blockAddAssignment func(block *Block, loc *Location, lvalue *Lvalue, rvalue *Rvalue)
+var blockEndWithJump func(block *Block, loc *Location, target *Block)
+var blockEndWithConditional func(block *Block, loc *Location, boolval *Rvalue, on_true *Block, on_false *Block)
+var contextSetIntOption func(ctx *Context, opt IntOption, value int)
+var contextNewArrayType func(ctx *Context, loc *Location, element_type *Type, num_elements int) *Type
+var typeGetPointer func(type_ *Type) *Type
+var contextZero func(ctx *Context, type_ *Type) *Rvalue
+var contextOne func(ctx *Context, type_ *Type) *Rvalue
+var contextNewGlobal func(ctx *Context, loc *Location, kind GlobalKind, type_ *Type, name string) *Lvalue
+var functionNewLocal func(fn *Function, loc *Location, type_ *Type, name string) *Lvalue
+var blockEndWithReturn func(block *Block, loc *Location, rvalue *Rvalue)
+var contextGetFirstError func(ctx *Context) string
 
 func init() {
 	lib, err := purego.Dlopen("libgccjit.so.0", purego.RTLD_NOW|purego.RTLD_GLOBAL)
