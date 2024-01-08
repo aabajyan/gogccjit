@@ -133,9 +133,9 @@ var contextRelease func(ctx *Context)
 var contextSetBoolOption func(ctx *Context, opt BoolOption, value bool) uintptr
 var contextCompile func(ctx *Context) *Result
 var resultRelease func(result *Result)
-var contextGetType func(ctx *Context, type_ Types) *Type
-var contextNewParam func(ctx *Context, loc *Location, type_ *Type, name string) *Param
-var contextNewFunction func(ctx *Context, loc *Location, kind FunctionKind, return_type *Type, name string, num_params int, params []*Param, is_variadic bool) *Function
+var contextGetType func(ctx *Context, typ Types) *Type
+var contextNewParam func(ctx *Context, loc *Location, typ *Type, name string) *Param
+var contextNewFunction func(ctx *Context, loc *Location, kind FunctionKind, return_type *Type, name string, numParams int, params []*Param, isVariadic bool) *Function
 var contextNewStringLiteral func(ctx *Context, value string) *Rvalue
 var functionNewBlock func(fn *Function, name string) *Block
 var blockAddEval func(block *Block, loc *Location, rvalue *Rvalue)
@@ -143,24 +143,24 @@ var contextNewCall func(ctx *Context, loc *Location, fn *Function, numargs int, 
 var blockEndWithVoidReturn func(block *Block, loc *Location)
 var resultGetCode func(result *Result, name string) uintptr
 var paramAsRvalue func(param *Param) *Rvalue
-var contextCompileToFile func(ctx *Context, output_kind OutputKind, output_path string)
+var contextCompileToFile func(ctx *Context, outputKind OutputKind, outputPath string)
 var contextNewArrayAccess func(ctx *Context, loc *Location, ptr *Rvalue, idx *Rvalue) *Lvalue
 var lvalueAsRvalue func(lvalue *Lvalue) *Rvalue
 var contextNewComparison func(ctx *Context, loc *Location, op Comparison, lhs *Rvalue, rhs *Rvalue) *Rvalue
 var contextNewLocation func(ctx *Context, filename string, line, column int) *Location
 var blockAddComment func(block *Block, loc *Location, text string)
 var blockAddAssignmentOp func(block *Block, loc *Location, lvalue *Lvalue, op BinaryOp, rvalue *Rvalue)
-var contextNewCast func(ctx *Context, loc *Location, rvalue *Rvalue, type_ *Type) *Rvalue
+var contextNewCast func(ctx *Context, loc *Location, rvalue *Rvalue, typ *Type) *Rvalue
 var blockAddAssignment func(block *Block, loc *Location, lvalue *Lvalue, rvalue *Rvalue)
 var blockEndWithJump func(block *Block, loc *Location, target *Block)
-var blockEndWithConditional func(block *Block, loc *Location, boolval *Rvalue, on_true *Block, on_false *Block)
+var blockEndWithConditional func(block *Block, loc *Location, boolval *Rvalue, onTrue *Block, onFalse *Block)
 var contextSetIntOption func(ctx *Context, opt IntOption, value int)
-var contextNewArrayType func(ctx *Context, loc *Location, element_type *Type, num_elements int) *Type
-var typeGetPointer func(type_ *Type) *Type
-var contextZero func(ctx *Context, type_ *Type) *Rvalue
-var contextOne func(ctx *Context, type_ *Type) *Rvalue
-var contextNewGlobal func(ctx *Context, loc *Location, kind GlobalKind, type_ *Type, name string) *Lvalue
-var functionNewLocal func(fn *Function, loc *Location, type_ *Type, name string) *Lvalue
+var contextNewArrayType func(ctx *Context, loc *Location, elementType *Type, numElements int) *Type
+var typeGetPointer func(typ *Type) *Type
+var contextZero func(ctx *Context, typ *Type) *Rvalue
+var contextOne func(ctx *Context, typ *Type) *Rvalue
+var contextNewGlobal func(ctx *Context, loc *Location, kind GlobalKind, typ *Type, name string) *Lvalue
+var functionNewLocal func(fn *Function, loc *Location, typ *Type, name string) *Lvalue
 var blockEndWithReturn func(block *Block, loc *Location, rvalue *Rvalue)
 var contextGetFirstError func(ctx *Context) string
 
@@ -215,16 +215,24 @@ func (c *Context) SetBoolOption(opt BoolOption, value bool) {
 	contextSetBoolOption(c, opt, value)
 }
 
-func (c *Context) GetType(type_ Types) *Type {
-	return contextGetType(c, type_)
+func (c *Context) SetIntOption(opt IntOption, value int) {
+	contextSetIntOption(c, opt, value)
+}
+
+func (c *Context) GetType(typ Types) *Type {
+	return contextGetType(c, typ)
+}
+
+func (c *Context) GetArrayType(loc *Location, elementType *Type, numElements int) *Type {
+	return contextNewArrayType(c, loc, elementType, numElements)
 }
 
 func (c *Context) NewFunction(loc *Location, kind FunctionKind, return_type *Type, name string, params []*Param, isVariadic bool) *Function {
 	return contextNewFunction(c, loc, kind, return_type, name, len(params), params, isVariadic)
 }
 
-func (c *Context) NewParam(loc *Location, type_ *Type, name string) *Param {
-	return contextNewParam(c, loc, type_, name)
+func (c *Context) NewParam(loc *Location, typ *Type, name string) *Param {
+	return contextNewParam(c, loc, typ, name)
 }
 
 func (c *Context) NewBlock(fn *Function, name string) *Block {
@@ -239,12 +247,44 @@ func (c *Context) NewStringLiteral(value string) *Rvalue {
 	return contextNewStringLiteral(c, value)
 }
 
-func (c *Context) NewArrayAccess(ptr *Rvalue, idx *Rvalue) *Lvalue {
-	return contextNewArrayAccess(c, nil, ptr, idx)
+func (c *Context) NewArrayAccess(loc *Location, ptr *Rvalue, idx *Rvalue) *Lvalue {
+	return contextNewArrayAccess(c, loc, ptr, idx)
+}
+
+func (c *Context) NewNewComparison(loc *Location, op Comparison, lhs *Rvalue, rhs *Rvalue) *Rvalue {
+	return contextNewComparison(c, loc, op, lhs, rhs)
+}
+
+func (c *Context) NewLocation(filename string, line, column int) *Location {
+	return contextNewLocation(c, filename, line, column)
+}
+
+func (c *Context) NewCast(loc *Location, rvalue *Rvalue, typ *Type) *Rvalue {
+	return contextNewCast(c, loc, rvalue, typ)
+}
+
+func (c *Context) NewGlobal(loc *Location, kind GlobalKind, typ *Type, name string) *Lvalue {
+	return contextNewGlobal(c, loc, kind, typ, name)
+}
+
+func (c *Context) Zero(typ *Type) *Rvalue {
+	return contextZero(c, typ)
+}
+
+func (c *Context) One(typ *Type) *Rvalue {
+	return contextOne(c, typ)
 }
 
 func (c *Context) Compile() *Result {
 	return contextCompile(c)
+}
+
+func (c *Context) GetFirstError() string {
+	return contextGetFirstError(c)
+}
+
+func (c *Context) CompileToFile(outputKind OutputKind, outputPath string) {
+	contextCompileToFile(c, outputKind, outputPath)
 }
 
 func (c *Context) Release() {
@@ -263,10 +303,50 @@ func (b *Block) EndWithVoidReturn(loc *Location) {
 	blockEndWithVoidReturn(b, loc)
 }
 
+func (b *Block) AddComment(loc *Location, text string) {
+	blockAddComment(b, loc, text)
+}
+
+func (b *Block) AddAssignmentOp(loc *Location, lvalue *Lvalue, op BinaryOp, rvalue *Rvalue) {
+	blockAddAssignmentOp(b, loc, lvalue, op, rvalue)
+}
+
+func (b *Block) AddAssignment(loc *Location, lvalue *Lvalue, rvalue *Rvalue) {
+	blockAddAssignment(b, loc, lvalue, rvalue)
+}
+
+func (b *Block) EndWithJump(loc *Location, target *Block) {
+	blockEndWithJump(b, loc, target)
+}
+
+func (b *Block) EndWithConditional(loc *Location, boolval *Rvalue, onTrue *Block, on_false *Block) {
+	blockEndWithConditional(b, loc, boolval, onTrue, on_false)
+}
+
+func (b *Block) EndWithReturn(loc *Location, rvalue *Rvalue) {
+	blockEndWithReturn(b, loc, rvalue)
+}
+
 func (r *Result) GetCode(name string) uintptr {
 	return resultGetCode(r, name)
 }
 
 func (r *Result) Release() {
 	resultRelease(r)
+}
+
+func (l *Lvalue) AsRvalue() *Rvalue {
+	return lvalueAsRvalue(l)
+}
+
+func (f *Function) NewBlock(name string) *Block {
+	return functionNewBlock(f, name)
+}
+
+func (f *Function) NewLocal(loc *Location, typ *Type, name string) *Lvalue {
+	return functionNewLocal(f, loc, typ, name)
+}
+
+func (t *Type) GetPointer() *Type {
+	return typeGetPointer(t)
 }

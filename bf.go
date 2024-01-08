@@ -12,28 +12,28 @@ type bfCompiler struct {
 	line, column int
 	ctx          *Context
 	void_type    *Type
-	int_type     *Type
-	byte_type    *Type
+	intType      *Type
+	byteType     *Type
 	array_type   *Type
 
-	func_getchar *Function
-	func_putchar *Function
-	func_main    *Function
+	funcGetchar *Function
+	funcPutchar *Function
+	funcMain    *Function
 
 	curblock *Block
 
-	int_zero   *Rvalue
-	int_one    *Rvalue
-	byte_zero  *Rvalue
-	byte_one   *Rvalue
-	data_cells *Lvalue
-	idx        *Lvalue
+	intZero   *Rvalue
+	intOne    *Rvalue
+	byteZero  *Rvalue
+	byteOne   *Rvalue
+	dataCells *Lvalue
+	idx       *Lvalue
 
-	num_open_parens int
+	numOpenParens int
 
-	paren_test  []*Block
-	paren_body  []*Block
-	paren_after []*Block
+	parenTest  []*Block
+	parenBody  []*Block
+	parenAfter []*Block
 }
 
 func (c *bfCompiler) fatalError(msg string) {
@@ -42,150 +42,122 @@ func (c *bfCompiler) fatalError(msg string) {
 }
 
 func (c *bfCompiler) getCurrentData(loc *Location) *Lvalue {
-	return contextNewArrayAccess(
-		c.ctx,
+	return c.ctx.NewArrayAccess(
 		loc,
-		lvalueAsRvalue(c.data_cells),
-		lvalueAsRvalue(c.idx),
+		c.dataCells.AsRvalue(),
+		c.idx.AsRvalue(),
 	)
 }
 
 func (c *bfCompiler) currentDataIsZero(loc *Location) *Rvalue {
-	return contextNewComparison(
-		c.ctx,
+	return c.ctx.NewNewComparison(
 		loc,
 		COMPARISON_EQ,
-		lvalueAsRvalue(c.getCurrentData(loc)),
-		c.byte_zero,
+		c.getCurrentData(loc).AsRvalue(),
+		c.byteZero,
 	)
 }
 
 func (c *bfCompiler) compileChar(ch byte) {
-	loc := contextNewLocation(c.ctx, c.filename, c.line, c.column)
+	loc := c.ctx.NewLocation(c.filename, c.line, c.column)
 
 	switch ch {
 	case '>':
-		blockAddComment(c.curblock, loc, "'>': idx += 1;")
-		blockAddAssignmentOp(
-			c.curblock,
+		c.curblock.AddComment(loc, "'>': idx += 1;")
+		c.curblock.AddAssignmentOp(
 			loc,
 			c.idx,
 			BINARY_OP_PLUS,
-			c.int_one,
+			c.intOne,
 		)
 	case '<':
-		blockAddComment(c.curblock, loc, "'<': idx -= 1;")
-		blockAddAssignmentOp(
-			c.curblock,
+		c.curblock.AddComment(loc, "'<': idx -= 1;")
+		c.curblock.AddAssignmentOp(
 			loc,
 			c.idx,
 			BINARY_OP_MINUS,
-			c.int_one,
+			c.intOne,
 		)
 	case '+':
-		blockAddComment(c.curblock, loc, "'+': data[idx] += 1;")
-		blockAddAssignmentOp(
-			c.curblock,
+		c.curblock.AddComment(loc, "'+': data[idx] += 1;")
+		c.curblock.AddAssignmentOp(
 			loc,
 			c.getCurrentData(loc),
 			BINARY_OP_PLUS,
-			c.byte_one,
+			c.byteOne,
 		)
 	case '-':
-		blockAddComment(c.curblock, loc, "'-': data[idx] -= 1;")
-		blockAddAssignmentOp(
-			c.curblock,
+		c.curblock.AddComment(loc, "'-': data[idx] -= 1;")
+		c.curblock.AddAssignmentOp(
 			loc,
 			c.getCurrentData(loc),
 			BINARY_OP_MINUS,
-			c.byte_one,
+			c.byteOne,
 		)
 	case '.':
-		arg := contextNewCast(
-			c.ctx,
+		arg := c.ctx.NewCast(
 			loc,
-			lvalueAsRvalue(c.getCurrentData(loc)),
-			c.int_type,
+			c.getCurrentData(loc).AsRvalue(),
+			c.intType,
 		)
 
-		call := contextNewCall(
-			c.ctx,
+		call := c.ctx.NewCall(
 			loc,
-			c.func_putchar,
-			1,
+			c.funcPutchar,
 			[]*Rvalue{arg},
 		)
 
-		blockAddComment(c.curblock, loc, "'.': putchar(data[idx]);")
-		blockAddEval(c.curblock, loc, call)
+		c.curblock.AddComment(loc, "'.': putchar(data[idx]);")
+		c.curblock.AddEval(loc, call)
 	case ',':
-		call := contextNewCall(
-			c.ctx,
+		call := c.ctx.NewCall(
 			loc,
-			c.func_getchar,
-			0,
+			c.funcGetchar,
 			[]*Rvalue{},
 		)
 
-		blockAddComment(c.curblock, loc, "',': data[idx] = getchar();")
-		blockAddAssignment(
-			c.curblock,
+		c.curblock.AddComment(loc, "',': data[idx] = getchar();")
+		c.curblock.AddAssignment(
 			loc,
 			c.getCurrentData(loc),
-			contextNewCast(
-				c.ctx,
+			c.ctx.NewCast(
 				loc,
 				call,
-				c.byte_type,
+				c.byteType,
 			),
 		)
 	case '[':
-		loop_test := functionNewBlock(c.func_main, "loop_test")
-		on_zero := functionNewBlock(c.func_main, "on_zero")
-		on_non_zero := functionNewBlock(c.func_main, "on_non_zero")
+		loopTest := c.funcMain.NewBlock("loopTest")
+		onZero := c.funcMain.NewBlock("onZero")
+		onNonZero := c.funcMain.NewBlock("onNonZero")
 
-		if c.num_open_parens >= MAX_OPEN_PARENS {
+		if c.numOpenParens >= MAX_OPEN_PARENS {
 			c.fatalError("too many open parens")
 		}
 
-		blockEndWithJump(
-			c.curblock,
-			loc,
-			loop_test,
-		)
-
-		blockAddComment(
-			loop_test,
-			loc,
-			"'['",
-		)
-
-		blockEndWithConditional(
-			loop_test,
+		c.curblock.EndWithJump(loc, loopTest)
+		loopTest.AddComment(loc, "'[':")
+		loopTest.EndWithConditional(
 			loc,
 			c.currentDataIsZero(loc),
-			on_zero,
-			on_non_zero,
+			onZero,
+			onNonZero,
 		)
 
-		c.paren_test[c.num_open_parens] = loop_test
-		c.paren_body[c.num_open_parens] = on_non_zero
-		c.paren_after[c.num_open_parens] = on_zero
-		c.num_open_parens += 1
-		c.curblock = on_non_zero
+		c.parenTest[c.numOpenParens] = loopTest
+		c.parenBody[c.numOpenParens] = onNonZero
+		c.parenAfter[c.numOpenParens] = onZero
+		c.numOpenParens += 1
+		c.curblock = onNonZero
 	case ']':
-		blockAddComment(c.curblock, loc, "']':")
-
-		if c.num_open_parens == 0 {
+		c.curblock.AddComment(loc, "']':")
+		if c.numOpenParens == 0 {
 			c.fatalError("mismatching parens")
 		}
-		c.num_open_parens -= 1
-		blockEndWithJump(
-			c.curblock,
-			loc,
-			c.paren_test[c.num_open_parens],
-		)
-		c.curblock = c.paren_after[c.num_open_parens]
+
+		c.numOpenParens -= 1
+		c.curblock.EndWithJump(loc, c.parenTest[c.numOpenParens])
+		c.curblock = c.parenAfter[c.numOpenParens]
 	case '\n':
 		c.line += 1
 		c.column = 0
@@ -196,33 +168,30 @@ func (c *bfCompiler) compileChar(ch byte) {
 	}
 }
 
-func make_main(ctx *Context) *Function {
-	int_type := contextGetType(ctx, TYPE_INT)
-	char_ptr_ptr_type := typeGetPointer(contextGetType(ctx, TYPE_CONST_CHAR_PTR))
+func makeMain(ctx *Context) *Function {
+	intType := ctx.GetType(TYPE_INT)
+	charPtrPtrType := ctx.GetType(TYPE_CONST_CHAR_PTR).GetPointer()
 
-	param_argc := contextNewParam(ctx, nil, int_type, "argc")
-	param_argv := contextNewParam(ctx, nil, char_ptr_ptr_type, "argv")
-
-	main_func := contextNewFunction(
-		ctx,
+	paramArgc := ctx.NewParam(nil, intType, "argc")
+	paramArgv := ctx.NewParam(nil, charPtrPtrType, "argv")
+	mainFunc := ctx.NewFunction(
 		nil,
 		FUNCTION_EXPORTED,
-		int_type,
+		intType,
 		"main",
-		2,
-		[]*Param{param_argc, param_argv},
+		[]*Param{paramArgc, paramArgv},
 		false,
 	)
 
-	return main_func
+	return mainFunc
 }
 
 func compile_bf(filename string) {
 	c := bfCompiler{
-		filename:    filename,
-		paren_test:  make([]*Block, MAX_OPEN_PARENS),
-		paren_body:  make([]*Block, MAX_OPEN_PARENS),
-		paren_after: make([]*Block, MAX_OPEN_PARENS),
+		filename:   filename,
+		parenTest:  make([]*Block, MAX_OPEN_PARENS),
+		parenBody:  make([]*Block, MAX_OPEN_PARENS),
+		parenAfter: make([]*Block, MAX_OPEN_PARENS),
 	}
 
 	code, err := os.ReadFile(filename)
@@ -232,70 +201,64 @@ func compile_bf(filename string) {
 
 	c.line = 1
 
-	if c.ctx = contextAcquire(); c.ctx == nil {
+	if c.ctx = ContextAcquire(); c.ctx == nil {
 		panic("failed to acquire context")
 	}
 
-	defer contextRelease(c.ctx)
+	defer c.ctx.Release()
 
-	contextSetIntOption(c.ctx, INT_OPTION_OPTIMIZATION_LEVEL, 3)
-	contextSetBoolOption(c.ctx, BOOL_OPTION_DUMP_INITIAL_GIMPLE, false)
-	contextSetBoolOption(c.ctx, BOOL_OPTION_DEBUGINFO, true)
-	contextSetBoolOption(c.ctx, BOOL_OPTION_DUMP_EVERYTHING, false)
-	contextSetBoolOption(c.ctx, BOOL_OPTION_KEEP_INTERMEDIATES, false)
+	c.ctx.SetIntOption(INT_OPTION_OPTIMIZATION_LEVEL, 3)
+	c.ctx.SetBoolOption(BOOL_OPTION_DUMP_INITIAL_GIMPLE, false)
+	c.ctx.SetBoolOption(BOOL_OPTION_DEBUGINFO, true)
+	c.ctx.SetBoolOption(BOOL_OPTION_DUMP_EVERYTHING, false)
+	c.ctx.SetBoolOption(BOOL_OPTION_KEEP_INTERMEDIATES, false)
 
-	c.void_type = contextGetType(c.ctx, TYPE_VOID)
-	c.int_type = contextGetType(c.ctx, TYPE_INT)
-	c.byte_type = contextGetType(c.ctx, TYPE_UNSIGNED_CHAR)
-	c.array_type = contextNewArrayType(c.ctx, nil, c.byte_type, 30000)
+	c.void_type = c.ctx.GetType(TYPE_VOID)
+	c.intType = c.ctx.GetType(TYPE_INT)
+	c.byteType = c.ctx.GetType(TYPE_UNSIGNED_CHAR)
+	c.array_type = c.ctx.GetArrayType(nil, c.byteType, 30000)
 
-	c.func_getchar = contextNewFunction(
-		c.ctx,
+	c.funcGetchar = c.ctx.NewFunction(
 		nil,
 		FUNCTION_IMPORTED,
-		c.int_type,
+		c.intType,
 		"getchar",
-		0,
 		[]*Param{},
 		false,
 	)
 
-	param_c := contextNewParam(c.ctx, nil, c.int_type, "c")
-	c.func_putchar = contextNewFunction(
-		c.ctx,
+	paramC := c.ctx.NewParam(nil, c.intType, "c")
+	c.funcPutchar = c.ctx.NewFunction(
 		nil,
 		FUNCTION_IMPORTED,
 		c.void_type,
 		"putchar",
-		1,
-		[]*Param{param_c},
+		[]*Param{paramC},
 		false,
 	)
 
-	c.func_main = make_main(c.ctx)
-	c.curblock = functionNewBlock(c.func_main, "main")
-	c.int_zero = contextZero(c.ctx, c.int_type)
-	c.int_one = contextOne(c.ctx, c.int_type)
-	c.byte_zero = contextZero(c.ctx, c.byte_type)
-	c.byte_one = contextOne(c.ctx, c.byte_type)
-	c.data_cells = contextNewGlobal(c.ctx, nil, GLOBAL_INTERNAL, c.array_type, "data_cells")
-	c.idx = functionNewLocal(c.func_main, nil, c.int_type, "idx")
+	c.funcMain = makeMain(c.ctx)
+	c.curblock = c.funcMain.NewBlock("main")
+	c.intZero = c.ctx.Zero(c.intType)
+	c.intOne = c.ctx.One(c.intType)
+	c.byteZero = c.ctx.Zero(c.byteType)
+	c.byteOne = c.ctx.One(c.byteType)
+	c.dataCells = c.ctx.NewGlobal(nil, GLOBAL_INTERNAL, c.array_type, "dataCells")
+	c.idx = c.funcMain.NewLocal(nil, c.intType, "idx")
 
-	blockAddComment(c.curblock, nil, "idx = 0;")
-	blockAddAssignment(c.curblock, nil, c.idx, c.int_zero)
+	c.curblock.AddComment(nil, "idx = 0;")
+	c.curblock.AddAssignment(nil, c.idx, c.intZero)
 
-	c.num_open_parens = 0
+	c.numOpenParens = 0
 
 	for _, ch := range code {
 		c.compileChar(ch)
 	}
 
-	blockEndWithReturn(c.curblock, nil, c.int_zero)
+	c.curblock.EndWithReturn(nil, c.intZero)
+	c.ctx.CompileToFile(OUTPUT_KIND_EXECUTABLE, "a.out")
 
-	contextCompileToFile(c.ctx, OUTPUT_KIND_EXECUTABLE, "a.out")
-
-	strerr := contextGetFirstError(c.ctx)
-	if strerr != "" {
+	if strerr := c.ctx.GetFirstError(); strerr != "" {
 		println(strerr)
 	}
 }
