@@ -3,61 +3,46 @@ package main
 import "github.com/ebitengine/purego"
 
 func greet() {
-	ctx := contextAcquire()
+	ctx := ContextAcquire()
 	if ctx == nil {
-		panic("ctx is null")
+		panic("no context")
 	}
 
-	defer contextRelease(ctx)
+	defer ctx.Release()
 
-	contextSetBoolOption(ctx, BOOL_OPTION_DEBUGINFO, false)
+	ctx.SetBoolOption(BOOL_OPTION_DEBUGINFO, false)
 
-	void_type := contextGetType(ctx, TYPE_VOID)
-	const_char_type := contextGetType(ctx, TYPE_CONST_CHAR_PTR)
-	param_name := contextNewParam(ctx, nil, const_char_type, "param")
-	fn := contextNewFunction(
-		ctx,
-		nil,
-		FUNCTION_EXPORTED,
-		void_type,
-		"greet",
-		1,
-		[]*Param{param_name},
-		false,
+	voidType := ctx.GetType(TYPE_VOID)
+	constCharType := ctx.GetType(TYPE_CONST_CHAR_PTR)
+
+	paramName := ctx.NewParam(constCharType, "param")
+	fn := ctx.NewFunction(FUNCTION_EXPORTED, voidType, "greet", []*Param{paramName}, false)
+
+	paramFormat := ctx.NewParam(constCharType, "format")
+	printfFunc := ctx.NewFunction(FUNCTION_IMPORTED, voidType, "printf", []*Param{paramFormat}, true)
+
+	block := ctx.NewBlock(fn, "entry")
+	block.AddEval(
+		ctx.NewCall(
+			printfFunc,
+			[]*Rvalue{
+				ctx.NewStringLiteral("Hello %s from GO!\n"),
+				paramName.AsRvalue(),
+			},
+		),
 	)
 
-	param_format := contextNewParam(ctx, nil, const_char_type, "format")
-	printf_func := contextNewFunction(
-		ctx,
-		nil,
-		FUNCTION_IMPORTED,
-		contextGetType(ctx, TYPE_INT),
-		"printf",
-		1,
-		[]*Param{param_format},
-		true,
-	)
+	block.EndWithVoidReturn(nil)
 
-	block := functionNewBlock(fn, "entry")
-	blockAddEval(block, nil, contextNewCall(
-		ctx,
-		nil,
-		printf_func,
-		2,
-		[]*Rvalue{contextNewStringLiteral(ctx, "Hello %s from GO!\n"), paramAsRvalue(param_name)},
-	))
-
-	blockEndWithVoidReturn(block, nil)
-
-	res := contextCompile(ctx)
+	res := ctx.Compile()
 	if res == nil {
-		panic("res is null")
+		panic("res is nil")
 	}
-	defer resultRelease(res)
+
+	defer res.Release()
 
 	var greet func(name string)
-	ptr := resultGetCode(res, "greet")
+	ptr := res.GetCode("greet")
 	purego.RegisterFunc(&greet, ptr)
-
 	greet("world")
 }
