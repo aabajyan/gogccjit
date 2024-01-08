@@ -15,6 +15,8 @@ type Type uint
 type Rvalue uint
 type Lvalue uint
 type Block uint
+type Field uint
+type Struct uint
 
 type FunctionPtr = *Function
 type ParamPtr = *Param
@@ -25,6 +27,8 @@ type TypePtr = *Type
 type RvaluePtr = *Rvalue
 type LvaluePtr = *Lvalue
 type BlockPtr = *Block
+type FieldPtr = *Field
+type StructPtr = *Struct
 
 type StrOption int
 type BoolOption int
@@ -177,6 +181,20 @@ var contextGetFirstError func(ctx *Context) string
 var contextGetLastError func(ctx *Context) string
 var contextDumpToFile func(ctx *Context, path string, updateLocations bool)
 var contextDumpReproducerToFile func(ctx *Context, path string)
+var contextSetBoolAllowUnreachableBlocks func(ctx *Context, value bool)
+var contextSetBoolPrintErrorsToStderr func(ctx *Context, value bool)
+var contextSetBoolUseExternalDriver func(ctx *Context, value bool)
+var contextAddCommandLineOption func(ctx *Context, optname string)
+var contextNewField func(ctx *Context, loc *Location, typ *Type, name string) *Field
+var contextNewStructType func(ctx *Context, loc *Location, name string, numFields int, fields []*Field) *Struct
+var rvalueDereferenceField func(ptr *Rvalue, loc *Location, field *Field) *Lvalue
+var structAsType func(structType *Struct) *Type
+var contextNewRvalueFromInt func(ctx *Context, typ *Type, value int) *Rvalue
+var contextNewRvalueFromLong func(ctx *Context, typ *Type, value int64) *Rvalue
+var contextNewRvalueFromPtr func(ctx *Context, typ *Type, value uintptr) *Rvalue
+var contextNewFunctionPtrType func(ctx *Context, loc *Location, returnType *Type, numParams int, paramTypes []*Type, isVariadic bool) *Type
+var contextNewCallThroughPtr func(ctx *Context, loc *Location, fnPtr *Rvalue, numArgs int, args []*Rvalue) *Rvalue
+var lvalueAccessField func(structOrUnion *Lvalue, loc *Location, field *Field) *Lvalue
 
 func init() {
 	lib, err := purego.Dlopen("libgccjit.so.0", purego.RTLD_NOW|purego.RTLD_GLOBAL)
@@ -223,6 +241,20 @@ func init() {
 	purego.RegisterLibFunc(&contextDumpToFile, lib, "gcc_jit_context_dump_to_file")
 	purego.RegisterLibFunc(&contextDumpReproducerToFile, lib, "gcc_jit_context_dump_reproducer_to_file")
 	purego.RegisterLibFunc(&contextSetStrOption, lib, "gcc_jit_context_set_str_option")
+	purego.RegisterLibFunc(&contextSetBoolAllowUnreachableBlocks, lib, "gcc_jit_context_set_bool_allow_unreachable_blocks")
+	purego.RegisterLibFunc(&contextSetBoolPrintErrorsToStderr, lib, "gcc_jit_context_set_bool_print_errors_to_stderr")
+	purego.RegisterLibFunc(&contextSetBoolUseExternalDriver, lib, "gcc_jit_context_set_bool_use_external_driver")
+	purego.RegisterLibFunc(&contextAddCommandLineOption, lib, "gcc_jit_context_add_command_line_option")
+	purego.RegisterLibFunc(&contextNewField, lib, "gcc_jit_context_new_field")
+	purego.RegisterLibFunc(&contextNewStructType, lib, "gcc_jit_context_new_struct_type")
+	purego.RegisterLibFunc(&rvalueDereferenceField, lib, "gcc_jit_rvalue_dereference_field")
+	purego.RegisterLibFunc(&structAsType, lib, "gcc_jit_struct_as_type")
+	purego.RegisterLibFunc(&contextNewRvalueFromInt, lib, "gcc_jit_context_new_rvalue_from_int")
+	purego.RegisterLibFunc(&contextNewRvalueFromLong, lib, "gcc_jit_context_new_rvalue_from_long")
+	purego.RegisterLibFunc(&contextNewRvalueFromPtr, lib, "gcc_jit_context_new_rvalue_from_ptr")
+	purego.RegisterLibFunc(&contextNewFunctionPtrType, lib, "gcc_jit_context_new_function_ptr_type")
+	purego.RegisterLibFunc(&contextNewCallThroughPtr, lib, "gcc_jit_context_new_call_through_ptr")
+	purego.RegisterLibFunc(&lvalueAccessField, lib, "gcc_jit_lvalue_access_field")
 }
 
 func ContextAcquire() *Context {
@@ -241,12 +273,36 @@ func (c *Context) SetStrOption(opt StrOption, value string) {
 	contextSetStrOption(c, opt, value)
 }
 
+func (c *Context) SetBoolAllowUnreachableBlocks(value bool) {
+	contextSetBoolAllowUnreachableBlocks(c, value)
+}
+
+func (c *Context) SetBoolPrintErrorsToStderr(value bool) {
+	contextSetBoolPrintErrorsToStderr(c, value)
+}
+
+func (c *Context) SetBoolUseExternalDriver(value bool) {
+	contextSetBoolUseExternalDriver(c, value)
+}
+
+func (c *Context) AddCommandLineOption(optname string) {
+	contextAddCommandLineOption(c, optname)
+}
+
 func (c *Context) GetType(typ Types) *Type {
 	return contextGetType(c, typ)
 }
 
 func (c *Context) GetArrayType(loc *Location, elementType *Type, numElements int) *Type {
 	return contextNewArrayType(c, loc, elementType, numElements)
+}
+
+func (c *Context) NewFunctionPtrType(loc *Location, returnType *Type, paramTypes []*Type, isVariadic bool) *Type {
+	return contextNewFunctionPtrType(c, loc, returnType, len(paramTypes), paramTypes, isVariadic)
+}
+
+func (c *Context) NewStructType(loc *Location, name string, fields []*Field) *Struct {
+	return contextNewStructType(c, loc, name, len(fields), fields)
 }
 
 func (c *Context) NewFunction(loc *Location, kind FunctionKind, return_type *Type, name string, params []*Param, isVariadic bool) *Function {
@@ -263,6 +319,10 @@ func (c *Context) NewBlock(fn *Function, name string) *Block {
 
 func (c *Context) NewCall(loc *Location, fn *Function, args []*Rvalue) *Rvalue {
 	return contextNewCall(c, loc, fn, len(args), args)
+}
+
+func (c *Context) NewCallThroughPtr(loc *Location, ptr *Rvalue, args []*Rvalue) *Rvalue {
+	return contextNewCallThroughPtr(c, loc, ptr, len(args), args)
 }
 
 func (c *Context) NewStringLiteral(value string) *Rvalue {
@@ -287,6 +347,22 @@ func (c *Context) NewCast(loc *Location, rvalue *Rvalue, typ *Type) *Rvalue {
 
 func (c *Context) NewGlobal(loc *Location, kind GlobalKind, typ *Type, name string) *Lvalue {
 	return contextNewGlobal(c, loc, kind, typ, name)
+}
+
+func (c *Context) NewRValueFromInt(typ *Type, value int) *Rvalue {
+	return contextNewRvalueFromInt(c, typ, value)
+}
+
+func (c *Context) NewRValueFromLong(typ *Type, value int64) *Rvalue {
+	return contextNewRvalueFromLong(c, typ, value)
+}
+
+func (c *Context) NewRvalueFromPtr(typ *Type, value uintptr) *Rvalue {
+	return contextNewRvalueFromPtr(c, typ, value)
+}
+
+func (c *Context) NewField(loc *Location, typ *Type, name string) *Field {
+	return contextNewField(c, loc, typ, name)
 }
 
 func (c *Context) Zero(typ *Type) *Rvalue {
@@ -383,6 +459,14 @@ func (l *Lvalue) AsRvalue() *Rvalue {
 	return lvalueAsRvalue(l)
 }
 
+func (l *Lvalue) AccessField(loc *Location, field *Field) *Lvalue {
+	return lvalueAccessField(l, loc, field)
+}
+
+func (r *Rvalue) DereferenceField(loc *Location, field *Field) *Lvalue {
+	return rvalueDereferenceField(r, loc, field)
+}
+
 func (f *Function) NewBlock(name string) *Block {
 	return functionNewBlock(f, name)
 }
@@ -393,4 +477,8 @@ func (f *Function) NewLocal(loc *Location, typ *Type, name string) *Lvalue {
 
 func (t *Type) GetPointer() *Type {
 	return typeGetPointer(t)
+}
+
+func (t *Struct) AsType() *Type {
+	return structAsType(t)
 }
