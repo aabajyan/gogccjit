@@ -9,6 +9,7 @@ import (
 )
 
 type (
+	Timer    uint
 	Object   uint
 	Function struct{ Object }
 	Location struct{ Object }
@@ -24,6 +25,7 @@ type (
 )
 
 type (
+	TimerPtr    = *Timer
 	ObjectPtr   = *Object
 	FunctionPtr = *Function
 	ParamPtr    = *Param
@@ -219,6 +221,12 @@ var (
 	typeGetSize                          func(typ *Type) uint64
 	objectGetContext                     func(obj *Object) *Context
 	objectGetDebugString                 func(obj *Object) string
+	timerNew                             func() *Timer
+	timerRelease                         func(t *Timer)
+	timerPush                            func(t *Timer, itemName string)
+	timerPop                             func(t *Timer, itemName string)
+	contextSetTimer                      func(ctx *Context, t *Timer)
+	contextGetTimer                      func(ctx *Context) *Timer
 )
 
 func getLibrary() string {
@@ -307,6 +315,28 @@ func init() {
 	purego.RegisterLibFunc(&typeGetSize, lib, "gcc_jit_type_get_size")
 	purego.RegisterLibFunc(&objectGetContext, lib, "gcc_jit_object_get_context")
 	purego.RegisterLibFunc(&objectGetDebugString, lib, "gcc_jit_object_get_debug_string")
+	purego.RegisterLibFunc(&timerNew, lib, "gcc_jit_timer_new")
+	purego.RegisterLibFunc(&timerRelease, lib, "gcc_jit_timer_release")
+	purego.RegisterLibFunc(&timerPush, lib, "gcc_jit_timer_push")
+	purego.RegisterLibFunc(&timerPop, lib, "gcc_jit_timer_pop")
+	purego.RegisterLibFunc(&contextSetTimer, lib, "gcc_jit_context_set_timer")
+	purego.RegisterLibFunc(&contextGetTimer, lib, "gcc_jit_context_get_timer")
+}
+
+func TimerNew() *Timer {
+	return timerNew()
+}
+
+func (t *Timer) Release() {
+	timerRelease(t)
+}
+
+func (t *Timer) Push(name string) {
+	timerPush(t, name)
+}
+
+func (t *Timer) Pop(name string) {
+	timerPop(t, name)
 }
 
 func ContextAcquire() *Context {
@@ -319,6 +349,14 @@ func (o *Object) GetContext() *Context {
 
 func (o *Object) GetDebugString() string {
 	return objectGetDebugString(o)
+}
+
+func (c *Context) SetTimer(t *Timer) {
+	contextSetTimer(c, t)
+}
+
+func (c *Context) GetTimer() *Timer {
+	return contextGetTimer(c)
 }
 
 func (c *Context) SetBoolOption(opt BoolOption, value bool) {
