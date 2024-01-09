@@ -230,6 +230,10 @@ var (
 	versionMajor                         func() int
 	versionMinor                         func() int
 	versionPatchLevel                    func() int
+	functionGetParamCount                func(f *Function) uint64
+	functionGetReturnType                func(f *Function) *Type
+	functionGetParam                     func(f *Function, idx int) *Param
+	functionDumpToDot                    func(f *Function, path string)
 )
 
 func getLibrary() string {
@@ -327,6 +331,10 @@ func init() {
 	purego.RegisterLibFunc(&versionMajor, lib, "gcc_jit_version_major")
 	purego.RegisterLibFunc(&versionMinor, lib, "gcc_jit_version_minor")
 	purego.RegisterLibFunc(&versionPatchLevel, lib, "gcc_jit_version_patchlevel")
+	purego.RegisterLibFunc(&functionGetParamCount, lib, "gcc_jit_function_get_param_count")
+	purego.RegisterLibFunc(&functionGetReturnType, lib, "gcc_jit_function_get_return_type")
+	purego.RegisterLibFunc(&functionGetParam, lib, "gcc_jit_function_get_param")
+	purego.RegisterLibFunc(&functionDumpToDot, lib, "gcc_jit_function_dump_to_dot")
 }
 
 func VersionMajor() int {
@@ -601,6 +609,22 @@ func (f *Function) NewBlock(name string) *Block {
 
 func (f *Function) NewLocal(loc *Location, typ *Type, name string) *Lvalue {
 	return functionNewLocal(f, loc, typ, name)
+}
+
+func (f *Function) GetParamCount() uint64 {
+	return functionGetParamCount(f)
+}
+
+func (f *Function) GetReturnType() *Type {
+	return functionGetReturnType(f)
+}
+
+func (f *Function) GetParam(index int) *Param {
+	return functionGetParam(f, index)
+}
+
+func (f *Function) DumpToDot(path string) {
+	functionDumpToDot(f, path)
 }
 
 func (t *Type) GetPointer() *Type {
