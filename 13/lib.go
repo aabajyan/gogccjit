@@ -227,6 +227,9 @@ var (
 	timerPop                             func(t *Timer, itemName string)
 	contextSetTimer                      func(ctx *Context, t *Timer)
 	contextGetTimer                      func(ctx *Context) *Timer
+	versionMajor                         func() int
+	versionMinor                         func() int
+	versionPatchLevel                    func() int
 )
 
 func getLibrary() string {
@@ -321,6 +324,21 @@ func init() {
 	purego.RegisterLibFunc(&timerPop, lib, "gcc_jit_timer_pop")
 	purego.RegisterLibFunc(&contextSetTimer, lib, "gcc_jit_context_set_timer")
 	purego.RegisterLibFunc(&contextGetTimer, lib, "gcc_jit_context_get_timer")
+	purego.RegisterLibFunc(&versionMajor, lib, "gcc_jit_version_major")
+	purego.RegisterLibFunc(&versionMinor, lib, "gcc_jit_version_minor")
+	purego.RegisterLibFunc(&versionPatchLevel, lib, "gcc_jit_version_patchlevel")
+}
+
+func VersionMajor() int {
+	return versionMajor()
+}
+
+func VersionMinor() int {
+	return versionMinor()
+}
+
+func VersionPatchLevel() int {
+	return versionPatchLevel()
 }
 
 func TimerNew() *Timer {
