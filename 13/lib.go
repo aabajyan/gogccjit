@@ -197,6 +197,9 @@ var contextNewRvalueFromPtr func(ctx *Context, typ *Type, value uintptr) *Rvalue
 var contextNewFunctionPtrType func(ctx *Context, loc *Location, returnType *Type, numParams int, paramTypes []*Type, isVariadic bool) *Type
 var contextNewCallThroughPtr func(ctx *Context, loc *Location, fnPtr *Rvalue, numArgs int, args []*Rvalue) *Rvalue
 var lvalueAccessField func(structOrUnion *Lvalue, loc *Location, field *Field) *Lvalue
+var contextNewBitCast func(ctx *Context, loc *Location, rvalue *Rvalue, typ *Type) *Rvalue
+var lvalueGetAddress func(lvalue *Lvalue, loc *Location) *Rvalue
+var rvalueDereference func(rvalue *Rvalue, loc *Location) *Lvalue
 
 func getLibrary() string {
 	switch runtime.GOOS {
@@ -205,13 +208,15 @@ func getLibrary() string {
 	case "darwin":
 		// FIXME: Replace hardcoded path with something else
 		return "/opt/homebrew/lib/gcc/current/libgccjit.0.dylib"
+	case "windows":
+		return "libgccjit-0.dll"
 	default:
 		panic(fmt.Errorf("GOOS=%s is not supported", runtime.GOOS))
 	}
 }
 
 func init() {
-	lib, err := purego.Dlopen(getLibrary(), purego.RTLD_NOW|purego.RTLD_GLOBAL)
+	lib, err := loadLibrary(getLibrary())
 	if err != nil {
 		panic(err)
 	}
@@ -269,6 +274,9 @@ func init() {
 	purego.RegisterLibFunc(&contextNewFunctionPtrType, lib, "gcc_jit_context_new_function_ptr_type")
 	purego.RegisterLibFunc(&contextNewCallThroughPtr, lib, "gcc_jit_context_new_call_through_ptr")
 	purego.RegisterLibFunc(&lvalueAccessField, lib, "gcc_jit_lvalue_access_field")
+	purego.RegisterLibFunc(&contextNewBitCast, lib, "gcc_jit_context_new_bitcast")
+	purego.RegisterLibFunc(&lvalueGetAddress, lib, "gcc_jit_lvalue_get_address")
+	purego.RegisterLibFunc(&rvalueDereference, lib, "gcc_jit_rvalue_dereference")
 }
 
 func ContextAcquire() *Context {
@@ -357,6 +365,10 @@ func (c *Context) NewLocation(filename string, line, column int) *Location {
 
 func (c *Context) NewCast(loc *Location, rvalue *Rvalue, typ *Type) *Rvalue {
 	return contextNewCast(c, loc, rvalue, typ)
+}
+
+func (c *Context) NewBitCast(loc *Location, rvalue *Rvalue, typ *Type) *Rvalue {
+	return contextNewBitCast(c, loc, rvalue, typ)
 }
 
 func (c *Context) NewGlobal(loc *Location, kind GlobalKind, typ *Type, name string) *Lvalue {
@@ -469,6 +481,10 @@ func (r *Result) Release() {
 	resultRelease(r)
 }
 
+func (l *Lvalue) GetAddress(loc *Location) *Rvalue {
+	return lvalueGetAddress(l, loc)
+}
+
 func (l *Lvalue) AsRvalue() *Rvalue {
 	return lvalueAsRvalue(l)
 }
@@ -479,6 +495,10 @@ func (l *Lvalue) AccessField(loc *Location, field *Field) *Lvalue {
 
 func (r *Rvalue) DereferenceField(loc *Location, field *Field) *Lvalue {
 	return rvalueDereferenceField(r, loc, field)
+}
+
+func (r *Rvalue) Dereference(loc *Location) *Lvalue {
+	return rvalueDereference(r, loc)
 }
 
 func (f *Function) NewBlock(name string) *Block {
