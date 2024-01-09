@@ -11,16 +11,16 @@ import (
 type (
 	Object   uint
 	Function struct{ Object }
-	Param    struct{ Object }
 	Location struct{ Object }
 	Context  struct{ Object }
 	Result   struct{ Object }
 	Type     struct{ Object }
 	Rvalue   struct{ Object }
-	Lvalue   struct{ Object }
+	Lvalue   struct{ Rvalue }
+	Param    struct{ Lvalue }
 	Block    struct{ Object }
 	Field    struct{ Object }
-	Struct   struct{ Object }
+	Struct   struct{ Type }
 )
 
 type (
