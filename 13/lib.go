@@ -9,20 +9,22 @@ import (
 )
 
 type (
-	Function uint
-	Param    uint
-	Location uint
-	Context  uint
-	Result   uint
-	Type     uint
-	Rvalue   uint
-	Lvalue   uint
-	Block    uint
-	Field    uint
-	Struct   uint
+	Object   uint
+	Function struct{ Object }
+	Param    struct{ Object }
+	Location struct{ Object }
+	Context  struct{ Object }
+	Result   struct{ Object }
+	Type     struct{ Object }
+	Rvalue   struct{ Object }
+	Lvalue   struct{ Object }
+	Block    struct{ Object }
+	Field    struct{ Object }
+	Struct   struct{ Object }
 )
 
 type (
+	ObjectPtr   = *Object
 	FunctionPtr = *Function
 	ParamPtr    = *Param
 	LocationPtr = *Location
@@ -215,6 +217,8 @@ var (
 	typeGetConst                         func(typ *Type) *Type
 	typeGetVolatile                      func(typ *Type) *Type
 	typeGetSize                          func(typ *Type) uint64
+	objectGetContext                     func(obj *Object) *Context
+	objectGetDebugString                 func(obj *Object) string
 )
 
 func getLibrary() string {
@@ -301,10 +305,20 @@ func init() {
 	purego.RegisterLibFunc(&typeGetConst, lib, "gcc_jit_type_get_const")
 	purego.RegisterLibFunc(&typeGetVolatile, lib, "gcc_jit_type_get_volatile")
 	purego.RegisterLibFunc(&typeGetSize, lib, "gcc_jit_type_get_size")
+	purego.RegisterLibFunc(&objectGetContext, lib, "gcc_jit_object_get_context")
+	purego.RegisterLibFunc(&objectGetDebugString, lib, "gcc_jit_object_get_debug_string")
 }
 
 func ContextAcquire() *Context {
 	return contextAcquire()
+}
+
+func (o *Object) GetContext() *Context {
+	return objectGetContext(o)
+}
+
+func (o *Object) GetDebugString() string {
+	return objectGetDebugString(o)
 }
 
 func (c *Context) SetBoolOption(opt BoolOption, value bool) {
