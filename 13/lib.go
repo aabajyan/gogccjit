@@ -8,39 +8,45 @@ import (
 	"github.com/ebitengine/purego"
 )
 
-type Function uint
-type Param uint
-type Location uint
-type Context uint
-type Result uint
-type Type uint
-type Rvalue uint
-type Lvalue uint
-type Block uint
-type Field uint
-type Struct uint
+type (
+	Function uint
+	Param    uint
+	Location uint
+	Context  uint
+	Result   uint
+	Type     uint
+	Rvalue   uint
+	Lvalue   uint
+	Block    uint
+	Field    uint
+	Struct   uint
+)
 
-type FunctionPtr = *Function
-type ParamPtr = *Param
-type LocationPtr = *Location
-type ContextPtr = *Context
-type ResultPtr = *Result
-type TypePtr = *Type
-type RvaluePtr = *Rvalue
-type LvaluePtr = *Lvalue
-type BlockPtr = *Block
-type FieldPtr = *Field
-type StructPtr = *Struct
+type (
+	FunctionPtr = *Function
+	ParamPtr    = *Param
+	LocationPtr = *Location
+	ContextPtr  = *Context
+	ResultPtr   = *Result
+	TypePtr     = *Type
+	RvaluePtr   = *Rvalue
+	LvaluePtr   = *Lvalue
+	BlockPtr    = *Block
+	FieldPtr    = *Field
+	StructPtr   = *Struct
+)
 
-type StrOption int
-type BoolOption int
-type Types int
-type FunctionKind int
-type OutputKind int
-type Comparison int
-type BinaryOp int
-type IntOption int
-type GlobalKind int
+type (
+	StrOption    int
+	BoolOption   int
+	Types        int
+	FunctionKind int
+	OutputKind   int
+	Comparison   int
+	BinaryOp     int
+	IntOption    int
+	GlobalKind   int
+)
 
 const (
 	GCC_JIT_STR_OPTION_PROGNAME StrOption = iota
@@ -144,62 +150,72 @@ const (
 	GLOBAL_IMPORTED
 )
 
-var contextAcquire func() *Context
-var contextRelease func(ctx *Context)
-var contextSetStrOption func(ctx *Context, opt StrOption, value string)
-var contextSetBoolOption func(ctx *Context, opt BoolOption, value bool)
-var contextCompile func(ctx *Context) *Result
-var resultRelease func(result *Result)
-var contextGetType func(ctx *Context, typ Types) *Type
-var contextNewParam func(ctx *Context, loc *Location, typ *Type, name string) *Param
-var contextNewFunction func(ctx *Context, loc *Location, kind FunctionKind, return_type *Type, name string, numParams int, params []*Param, isVariadic bool) *Function
-var contextNewStringLiteral func(ctx *Context, value string) *Rvalue
-var functionNewBlock func(fn *Function, name string) *Block
-var blockAddEval func(block *Block, loc *Location, rvalue *Rvalue)
-var contextNewCall func(ctx *Context, loc *Location, fn *Function, numargs int, args []*Rvalue) *Rvalue
-var blockEndWithVoidReturn func(block *Block, loc *Location)
-var resultGetCode func(result *Result, name string) uintptr
-var paramAsRvalue func(param *Param) *Rvalue
-var contextCompileToFile func(ctx *Context, outputKind OutputKind, outputPath string)
-var contextNewArrayAccess func(ctx *Context, loc *Location, ptr *Rvalue, idx *Rvalue) *Lvalue
-var lvalueAsRvalue func(lvalue *Lvalue) *Rvalue
-var contextNewComparison func(ctx *Context, loc *Location, op Comparison, lhs *Rvalue, rhs *Rvalue) *Rvalue
-var contextNewLocation func(ctx *Context, filename string, line, column int) *Location
-var blockAddComment func(block *Block, loc *Location, text string)
-var blockAddAssignmentOp func(block *Block, loc *Location, lvalue *Lvalue, op BinaryOp, rvalue *Rvalue)
-var contextNewCast func(ctx *Context, loc *Location, rvalue *Rvalue, typ *Type) *Rvalue
-var blockAddAssignment func(block *Block, loc *Location, lvalue *Lvalue, rvalue *Rvalue)
-var blockEndWithJump func(block *Block, loc *Location, target *Block)
-var blockEndWithConditional func(block *Block, loc *Location, boolval *Rvalue, onTrue *Block, onFalse *Block)
-var contextSetIntOption func(ctx *Context, opt IntOption, value int)
-var contextNewArrayType func(ctx *Context, loc *Location, elementType *Type, numElements int) *Type
-var typeGetPointer func(typ *Type) *Type
-var contextZero func(ctx *Context, typ *Type) *Rvalue
-var contextOne func(ctx *Context, typ *Type) *Rvalue
-var contextNewGlobal func(ctx *Context, loc *Location, kind GlobalKind, typ *Type, name string) *Lvalue
-var functionNewLocal func(fn *Function, loc *Location, typ *Type, name string) *Lvalue
-var blockEndWithReturn func(block *Block, loc *Location, rvalue *Rvalue)
-var contextGetFirstError func(ctx *Context) string
-var contextGetLastError func(ctx *Context) string
-var contextDumpToFile func(ctx *Context, path string, updateLocations bool)
-var contextDumpReproducerToFile func(ctx *Context, path string)
-var contextSetBoolAllowUnreachableBlocks func(ctx *Context, value bool)
-var contextSetBoolPrintErrorsToStderr func(ctx *Context, value bool)
-var contextSetBoolUseExternalDriver func(ctx *Context, value bool)
-var contextAddCommandLineOption func(ctx *Context, optname string)
-var contextNewField func(ctx *Context, loc *Location, typ *Type, name string) *Field
-var contextNewStructType func(ctx *Context, loc *Location, name string, numFields int, fields []*Field) *Struct
-var rvalueDereferenceField func(ptr *Rvalue, loc *Location, field *Field) *Lvalue
-var structAsType func(structType *Struct) *Type
-var contextNewRvalueFromInt func(ctx *Context, typ *Type, value int) *Rvalue
-var contextNewRvalueFromLong func(ctx *Context, typ *Type, value int64) *Rvalue
-var contextNewRvalueFromPtr func(ctx *Context, typ *Type, value uintptr) *Rvalue
-var contextNewFunctionPtrType func(ctx *Context, loc *Location, returnType *Type, numParams int, paramTypes []*Type, isVariadic bool) *Type
-var contextNewCallThroughPtr func(ctx *Context, loc *Location, fnPtr *Rvalue, numArgs int, args []*Rvalue) *Rvalue
-var lvalueAccessField func(structOrUnion *Lvalue, loc *Location, field *Field) *Lvalue
-var contextNewBitCast func(ctx *Context, loc *Location, rvalue *Rvalue, typ *Type) *Rvalue
-var lvalueGetAddress func(lvalue *Lvalue, loc *Location) *Rvalue
-var rvalueDereference func(rvalue *Rvalue, loc *Location) *Lvalue
+var (
+	contextAcquire                       func() *Context
+	contextRelease                       func(ctx *Context)
+	contextSetStrOption                  func(ctx *Context, opt StrOption, value string)
+	contextSetBoolOption                 func(ctx *Context, opt BoolOption, value bool)
+	contextCompile                       func(ctx *Context) *Result
+	resultRelease                        func(result *Result)
+	contextGetType                       func(ctx *Context, typ Types) *Type
+	contextNewParam                      func(ctx *Context, loc *Location, typ *Type, name string) *Param
+	contextNewFunction                   func(ctx *Context, loc *Location, kind FunctionKind, return_type *Type, name string, numParams int, params []*Param, isVariadic bool) *Function
+	contextNewStringLiteral              func(ctx *Context, value string) *Rvalue
+	functionNewBlock                     func(fn *Function, name string) *Block
+	blockAddEval                         func(block *Block, loc *Location, rvalue *Rvalue)
+	contextNewCall                       func(ctx *Context, loc *Location, fn *Function, numargs int, args []*Rvalue) *Rvalue
+	blockEndWithVoidReturn               func(block *Block, loc *Location)
+	resultGetCode                        func(result *Result, name string) uintptr
+	paramAsRvalue                        func(param *Param) *Rvalue
+	contextCompileToFile                 func(ctx *Context, outputKind OutputKind, outputPath string)
+	contextNewArrayAccess                func(ctx *Context, loc *Location, ptr *Rvalue, idx *Rvalue) *Lvalue
+	lvalueAsRvalue                       func(lvalue *Lvalue) *Rvalue
+	contextNewComparison                 func(ctx *Context, loc *Location, op Comparison, lhs *Rvalue, rhs *Rvalue) *Rvalue
+	contextNewLocation                   func(ctx *Context, filename string, line, column int) *Location
+	blockAddComment                      func(block *Block, loc *Location, text string)
+	blockAddAssignmentOp                 func(block *Block, loc *Location, lvalue *Lvalue, op BinaryOp, rvalue *Rvalue)
+	contextNewCast                       func(ctx *Context, loc *Location, rvalue *Rvalue, typ *Type) *Rvalue
+	blockAddAssignment                   func(block *Block, loc *Location, lvalue *Lvalue, rvalue *Rvalue)
+	blockEndWithJump                     func(block *Block, loc *Location, target *Block)
+	blockEndWithConditional              func(block *Block, loc *Location, boolval *Rvalue, onTrue *Block, onFalse *Block)
+	contextSetIntOption                  func(ctx *Context, opt IntOption, value int)
+	contextNewArrayType                  func(ctx *Context, loc *Location, elementType *Type, numElements int) *Type
+	typeGetPointer                       func(typ *Type) *Type
+	contextZero                          func(ctx *Context, typ *Type) *Rvalue
+	contextOne                           func(ctx *Context, typ *Type) *Rvalue
+	contextNewGlobal                     func(ctx *Context, loc *Location, kind GlobalKind, typ *Type, name string) *Lvalue
+	functionNewLocal                     func(fn *Function, loc *Location, typ *Type, name string) *Lvalue
+	blockEndWithReturn                   func(block *Block, loc *Location, rvalue *Rvalue)
+	contextGetFirstError                 func(ctx *Context) string
+	contextGetLastError                  func(ctx *Context) string
+	contextDumpToFile                    func(ctx *Context, path string, updateLocations bool)
+	contextDumpReproducerToFile          func(ctx *Context, path string)
+	contextSetBoolAllowUnreachableBlocks func(ctx *Context, value bool)
+	contextSetBoolPrintErrorsToStderr    func(ctx *Context, value bool)
+	contextSetBoolUseExternalDriver      func(ctx *Context, value bool)
+	contextAddCommandLineOption          func(ctx *Context, optname string)
+	contextNewField                      func(ctx *Context, loc *Location, typ *Type, name string) *Field
+	contextNewStructType                 func(ctx *Context, loc *Location, name string, numFields int, fields []*Field) *Struct
+	rvalueDereferenceField               func(ptr *Rvalue, loc *Location, field *Field) *Lvalue
+	structAsType                         func(structType *Struct) *Type
+	contextNewRvalueFromInt              func(ctx *Context, typ *Type, value int) *Rvalue
+	contextNewRvalueFromLong             func(ctx *Context, typ *Type, value int64) *Rvalue
+	contextNewRvalueFromPtr              func(ctx *Context, typ *Type, value uintptr) *Rvalue
+	contextNewFunctionPtrType            func(ctx *Context, loc *Location, returnType *Type, numParams int, paramTypes []*Type, isVariadic bool) *Type
+	contextNewCallThroughPtr             func(ctx *Context, loc *Location, fnPtr *Rvalue, numArgs int, args []*Rvalue) *Rvalue
+	lvalueAccessField                    func(structOrUnion *Lvalue, loc *Location, field *Field) *Lvalue
+	contextNewBitCast                    func(ctx *Context, loc *Location, rvalue *Rvalue, typ *Type) *Rvalue
+	lvalueGetAddress                     func(lvalue *Lvalue, loc *Location) *Rvalue
+	rvalueDereference                    func(rvalue *Rvalue, loc *Location) *Lvalue
+	typeIsBool                           func(typ *Type) bool
+	typeIsPointer                        func(typ *Type) bool
+	typeIsIntegral                       func(typ *Type) bool
+	typeIsStruct                         func(typ *Type) bool
+	typeUnqualified                      func(typ *Type) *Type
+	typeGetConst                         func(typ *Type) *Type
+	typeGetVolatile                      func(typ *Type) *Type
+	typeGetSize                          func(typ *Type) uint64
+)
 
 func getLibrary() string {
 	switch runtime.GOOS {
@@ -277,6 +293,14 @@ func init() {
 	purego.RegisterLibFunc(&contextNewBitCast, lib, "gcc_jit_context_new_bitcast")
 	purego.RegisterLibFunc(&lvalueGetAddress, lib, "gcc_jit_lvalue_get_address")
 	purego.RegisterLibFunc(&rvalueDereference, lib, "gcc_jit_rvalue_dereference")
+	purego.RegisterLibFunc(&typeIsBool, lib, "gcc_jit_type_is_bool")
+	purego.RegisterLibFunc(&typeIsPointer, lib, "gcc_jit_type_is_pointer")
+	purego.RegisterLibFunc(&typeIsIntegral, lib, "gcc_jit_type_is_integral")
+	purego.RegisterLibFunc(&typeIsStruct, lib, "gcc_jit_type_is_struct")
+	purego.RegisterLibFunc(&typeUnqualified, lib, "gcc_jit_type_unqualified")
+	purego.RegisterLibFunc(&typeGetConst, lib, "gcc_jit_type_get_const")
+	purego.RegisterLibFunc(&typeGetVolatile, lib, "gcc_jit_type_get_volatile")
+	purego.RegisterLibFunc(&typeGetSize, lib, "gcc_jit_type_get_size")
 }
 
 func ContextAcquire() *Context {
@@ -511,6 +535,38 @@ func (f *Function) NewLocal(loc *Location, typ *Type, name string) *Lvalue {
 
 func (t *Type) GetPointer() *Type {
 	return typeGetPointer(t)
+}
+
+func (t *Type) GetConst() *Type {
+	return typeGetConst(t)
+}
+
+func (t *Type) GetVolatile() *Type {
+	return typeGetVolatile(t)
+}
+
+func (t *Type) GetSize() uint64 {
+	return typeGetSize(t)
+}
+
+func (t *Type) IsBool() bool {
+	return typeIsBool(t)
+}
+
+func (t *Type) IsPointer() bool {
+	return typeIsPointer(t)
+}
+
+func (t *Type) IsIntegral() bool {
+	return typeIsIntegral(t)
+}
+
+func (t *Type) IsStruct() bool {
+	return typeIsStruct(t)
+}
+
+func (t *Type) Unqualified() *Type {
+	return typeUnqualified(t)
 }
 
 func (t *Struct) AsType() *Type {
