@@ -7,12 +7,35 @@ import (
 	gccjit "github.com/aabajyan/gogccjit/13"
 )
 
+/*
+This comment is only for debugging purposes
+
+#include <stdio.h>
+#include <windows.h>
+
+int main() {
+  char err[256];
+
+  void *handle = LoadLibraryA("libraylib.dll");
+  if (handle == NULL) {
+    FormatMessageA(4608, NULL, GetLastError(), 1024, err, 255, NULL);
+    printf("Failed to load library libraylib.dll: %s\n", err);
+    return 1;
+  }
+
+  FreeLibrary(handle);
+  return 0;
+}
+*/
+
 func getLibrary() string {
 	switch runtime.GOOS {
 	case "linux":
 		return "libraylib.so"
 	case "darwin":
 		return "libraylib.dylib"
+	case "windows":
+		return "libraylib.dll"
 	default:
 		panic(fmt.Errorf("GOOS=%s is not supported", runtime.GOOS))
 	}
@@ -45,49 +68,93 @@ func main() {
 		true,
 	)
 
-	dlOpenFunc := ctx.NewFunction(
-		nil,
-		gccjit.FUNCTION_IMPORTED,
-		voidPtrType,
-		"dlopen",
-		[]*gccjit.Param{
-			ctx.NewParam(nil, constCharType, "filename"),
-			ctx.NewParam(nil, intType, "flags"),
-		},
-		false,
-	)
+	var dlOpenFunc *gccjit.Function
+	if runtime.GOOS == "windows" {
+		dlOpenFunc = ctx.NewFunction(
+			nil,
+			gccjit.FUNCTION_IMPORTED,
+			voidPtrType,
+			"LoadLibraryA",
+			[]*gccjit.Param{
+				ctx.NewParam(nil, constCharType, "filename"),
+			},
+			true,
+		)
+	} else {
+		dlOpenFunc = ctx.NewFunction(
+			nil,
+			gccjit.FUNCTION_IMPORTED,
+			voidPtrType,
+			"dlopen",
+			[]*gccjit.Param{
+				ctx.NewParam(nil, constCharType, "filename"),
+				ctx.NewParam(nil, intType, "flags"),
+			},
+			false,
+		)
+	}
 
-	dlCloseFunc := ctx.NewFunction(
-		nil,
-		gccjit.FUNCTION_IMPORTED,
-		voidType,
-		"dlclose",
-		[]*gccjit.Param{
-			ctx.NewParam(nil, voidPtrType, "handle"),
-		},
-		false,
-	)
+	var dlCloseFunc *gccjit.Function
+	if runtime.GOOS == "windows" {
+		dlCloseFunc = ctx.NewFunction(
+			nil,
+			gccjit.FUNCTION_IMPORTED,
+			intType,
+			"FreeLibrary",
+			[]*gccjit.Param{
+				ctx.NewParam(nil, voidPtrType, "handle"),
+			},
+			true,
+		)
+	} else {
+		dlCloseFunc = ctx.NewFunction(
+			nil,
+			gccjit.FUNCTION_IMPORTED,
+			voidType,
+			"dlclose",
+			[]*gccjit.Param{
+				ctx.NewParam(nil, voidPtrType, "handle"),
+			},
+			false,
+		)
+	}
 
-	dlsymFunc := ctx.NewFunction(
-		nil,
-		gccjit.FUNCTION_IMPORTED,
-		voidPtrType,
-		"dlsym",
-		[]*gccjit.Param{
-			ctx.NewParam(nil, voidPtrType, "handle"),
-			ctx.NewParam(nil, constCharType, "symbol"),
-		},
-		false,
-	)
+	var dlsymFunc *gccjit.Function
+	if runtime.GOOS == "windows" {
+		dlsymFunc = ctx.NewFunction(
+			nil,
+			gccjit.FUNCTION_IMPORTED,
+			voidPtrType,
+			"GetProcAddress",
+			[]*gccjit.Param{
+				ctx.NewParam(nil, voidPtrType, "handle"),
+				ctx.NewParam(nil, constCharType, "symbol"),
+			},
+			true,
+		)
+	} else {
+		dlsymFunc = ctx.NewFunction(
+			nil,
+			gccjit.FUNCTION_IMPORTED,
+			voidPtrType,
+			"dlsym",
+			[]*gccjit.Param{
+				ctx.NewParam(nil, voidPtrType, "handle"),
+				ctx.NewParam(nil, constCharType, "symbol"),
+			},
+			false,
+		)
+	}
 
-	dlerrorFunc := ctx.NewFunction(
-		nil,
-		gccjit.FUNCTION_IMPORTED,
-		constCharType,
-		"dlerror",
-		[]*gccjit.Param{},
-		false,
-	)
+	// TODO: Display error messages
+	// dlerrorFunc := ctx.NewFunction(
+	// 	nil,
+	// 	gccjit.FUNCTION_IMPORTED,
+	// 	constCharType,
+	// 	"dlerror",
+	// 	[]*gccjit.Param{},
+	// 	false,
+	// )
 
 	rField := ctx.NewField(nil, charType, "r")
 	gField := ctx.NewField(nil, charType, "g")
@@ -194,18 +261,34 @@ func main() {
 		"handle",
 	)
 
-	block.AddAssignment(
-		nil,
-		handle,
-		ctx.NewCall(
+	{
+		var call *gccjit.Rvalue
+
+		if runtime.GOOS == "windows" {
+			call = ctx.NewCall(
+				nil,
+				dlOpenFunc,
+				[]*gccjit.Rvalue{
+					ctx.NewStringLiteral(getLibrary()),
+				},
+			)
+		} else {
+			call = ctx.NewCall(
+				nil,
+				dlOpenFunc,
+				[]*gccjit.Rvalue{
+					ctx.NewStringLiteral(getLibrary()),
+					ctx.NewRValueFromLong(intType, 0x00001),
+				},
+			)
+		}
+
+		block.AddAssignment(
 			nil,
-			dlOpenFunc,
-			[]*gccjit.Rvalue{
-				ctx.NewStringLiteral(getLibrary()),
-				ctx.NewRValueFromLong(intType, 0x00001),
-			},
-		),
-	)
+			handle,
+			call,
+		)
+	}
 
 	handleLoaded := mainFunc.NewBlock("handleLoaded")
 	handleNotLoaded := mainFunc.NewBlock("handleNotLoaded")
@@ -229,7 +312,7 @@ func main() {
 			printfFunc,
 			[]*gccjit.Rvalue{
 				ctx.NewStringLiteral("Failed to load library libraylib.so: %s\n"),
-				ctx.NewCall(nil, dlerrorFunc, []*gccjit.Rvalue{}),
+				// ctx.NewCall(nil, dlerrorFunc, []*gccjit.Rvalue{}),
 			},
 		),
 	)
@@ -537,6 +620,11 @@ func main() {
 
 	gameExit.EndWithReturn(nil, ctx.NewRValueFromInt(intType, 0))
 
+	output := "./a.out"
+	if runtime.GOOS == "windows" {
+		output = "./a.exe"
+	}
+
 	// ctx.DumpToFile("./test.txt", false)
-	ctx.CompileToFile(gccjit.OUTPUT_KIND_EXECUTABLE, "./a.out")
+	ctx.CompileToFile(gccjit.OUTPUT_KIND_EXECUTABLE, output)
 }
