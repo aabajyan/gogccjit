@@ -234,6 +234,11 @@ var (
 	functionGetReturnType                func(f *Function) *Type
 	functionGetParam                     func(f *Function, idx int) *Param
 	functionDumpToDot                    func(f *Function, path string)
+	contextAddDriverOption               func(c *Context, optname string)
+	resultGetGlobal                      func(r *Result, name string) uintptr
+	typeCompatible                       func(lhs *Type, rhs *Type) bool
+	contextNewBitfield                   func(c *Context, l *Location, typ *Type, width int, name string) *Field
+	contextNewOpaqueStruct               func(c *Context, loc *Location, name string) *Struct
 )
 
 func getLibrary() string {
@@ -335,6 +340,11 @@ func init() {
 	purego.RegisterLibFunc(&functionGetReturnType, lib, "gcc_jit_function_get_return_type")
 	purego.RegisterLibFunc(&functionGetParam, lib, "gcc_jit_function_get_param")
 	purego.RegisterLibFunc(&functionDumpToDot, lib, "gcc_jit_function_dump_to_dot")
+	purego.RegisterLibFunc(&contextAddDriverOption, lib, "gcc_jit_context_add_driver_option")
+	purego.RegisterLibFunc(&resultGetGlobal, lib, "gcc_jit_result_get_global")
+	purego.RegisterLibFunc(&typeCompatible, lib, "gcc_jit_compatible_types")
+	purego.RegisterLibFunc(&contextNewBitfield, lib, "gcc_jit_context_new_bitfield")
+	purego.RegisterLibFunc(&contextNewOpaqueStruct, lib, "gcc_jit_context_new_opaque_struct")
 }
 
 func VersionMajor() int {
@@ -413,6 +423,14 @@ func (c *Context) AddCommandLineOption(optname string) {
 	contextAddCommandLineOption(c, optname)
 }
 
+func (c *Context) AddDriverOption(optname string) {
+	contextAddDriverOption(c, optname)
+}
+
+func (c *Context) NewBitfield(loc *Location, typ *Type, width int, name string) *Field {
+	return contextNewBitfield(c, loc, typ, width, name)
+}
+
 func (c *Context) GetType(typ Types) *Type {
 	return contextGetType(c, typ)
 }
@@ -423,6 +441,10 @@ func (c *Context) GetArrayType(loc *Location, elementType *Type, numElements int
 
 func (c *Context) NewFunctionPtrType(loc *Location, returnType *Type, paramTypes []*Type, isVariadic bool) *Type {
 	return contextNewFunctionPtrType(c, loc, returnType, len(paramTypes), paramTypes, isVariadic)
+}
+
+func (c *Context) NewOpaqueStruct(loc *Location, name string) *Struct {
+	return contextNewOpaqueStruct(c, loc, name)
 }
 
 func (c *Context) NewStructType(loc *Location, name string, fields []*Field) *Struct {
@@ -570,6 +592,10 @@ func (b *Block) EndWithReturn(loc *Location, rvalue *Rvalue) {
 	blockEndWithReturn(b, loc, rvalue)
 }
 
+func (r *Result) GetGlobal(name string) uintptr {
+	return resultGetGlobal(r, name)
+}
+
 func (r *Result) GetCode(name string) uintptr {
 	return resultGetCode(r, name)
 }
@@ -625,6 +651,10 @@ func (f *Function) GetParam(index int) *Param {
 
 func (f *Function) DumpToDot(path string) {
 	functionDumpToDot(f, path)
+}
+
+func (t *Type) IsCompatible(target *Type) bool {
+	return typeCompatible(t, target)
 }
 
 func (t *Type) GetPointer() *Type {
