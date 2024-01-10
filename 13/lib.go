@@ -231,10 +231,8 @@ var (
 	contextNewCall                       func(ctx *Context, loc *Location, fn *Function, numargs int, args []*Rvalue) *Rvalue
 	blockEndWithVoidReturn               func(block *Block, loc *Location)
 	resultGetCode                        func(result *Result, name string) uintptr
-	paramAsRvalue                        func(param *Param) *Rvalue
 	contextCompileToFile                 func(ctx *Context, outputKind OutputKind, outputPath string)
 	contextNewArrayAccess                func(ctx *Context, loc *Location, ptr *Rvalue, idx *Rvalue) *Lvalue
-	lvalueAsRvalue                       func(lvalue *Lvalue) *Rvalue
 	contextNewComparison                 func(ctx *Context, loc *Location, op Comparison, lhs *Rvalue, rhs *Rvalue) *Rvalue
 	contextNewLocation                   func(ctx *Context, filename string, line, column int) *Location
 	blockAddComment                      func(block *Block, loc *Location, text string)
@@ -262,7 +260,6 @@ var (
 	contextNewField                      func(ctx *Context, loc *Location, typ *Type, name string) *Field
 	contextNewStructType                 func(ctx *Context, loc *Location, name string, numFields int, fields []*Field) *Struct
 	rvalueDereferenceField               func(ptr *Rvalue, loc *Location, field *Field) *Lvalue
-	structAsType                         func(structType *Struct) *Type
 	contextNewRvalueFromInt              func(ctx *Context, typ *Type, value int) *Rvalue
 	contextNewRvalueFromLong             func(ctx *Context, typ *Type, value int64) *Rvalue
 	contextNewRvalueFromPtr              func(ctx *Context, typ *Type, value uintptr) *Rvalue
@@ -337,10 +334,8 @@ func init() {
 	purego.RegisterLibFunc(&contextNewCall, lib, "gcc_jit_context_new_call")
 	purego.RegisterLibFunc(&blockEndWithVoidReturn, lib, "gcc_jit_block_end_with_void_return")
 	purego.RegisterLibFunc(&resultGetCode, lib, "gcc_jit_result_get_code")
-	purego.RegisterLibFunc(&paramAsRvalue, lib, "gcc_jit_param_as_rvalue")
 	purego.RegisterLibFunc(&contextCompileToFile, lib, "gcc_jit_context_compile_to_file")
 	purego.RegisterLibFunc(&contextNewArrayAccess, lib, "gcc_jit_context_new_array_access")
-	purego.RegisterLibFunc(&lvalueAsRvalue, lib, "gcc_jit_lvalue_as_rvalue")
 	purego.RegisterLibFunc(&contextNewComparison, lib, "gcc_jit_context_new_comparison")
 	purego.RegisterLibFunc(&contextNewLocation, lib, "gcc_jit_context_new_location")
 	purego.RegisterLibFunc(&blockAddComment, lib, "gcc_jit_block_add_comment")
@@ -369,7 +364,6 @@ func init() {
 	purego.RegisterLibFunc(&contextNewField, lib, "gcc_jit_context_new_field")
 	purego.RegisterLibFunc(&contextNewStructType, lib, "gcc_jit_context_new_struct_type")
 	purego.RegisterLibFunc(&rvalueDereferenceField, lib, "gcc_jit_rvalue_dereference_field")
-	purego.RegisterLibFunc(&structAsType, lib, "gcc_jit_struct_as_type")
 	purego.RegisterLibFunc(&contextNewRvalueFromInt, lib, "gcc_jit_context_new_rvalue_from_int")
 	purego.RegisterLibFunc(&contextNewRvalueFromLong, lib, "gcc_jit_context_new_rvalue_from_long")
 	purego.RegisterLibFunc(&contextNewRvalueFromPtr, lib, "gcc_jit_context_new_rvalue_from_ptr")
@@ -619,7 +613,7 @@ func (c *Context) Release() {
 }
 
 func (p *Param) AsRvalue() *Rvalue {
-	return paramAsRvalue(p)
+	return &p.Rvalue
 }
 
 func (b *Block) AddEval(loc *Location, rvalue *Rvalue) {
@@ -676,7 +670,7 @@ func (l *Lvalue) GetAddress(loc *Location) *Rvalue {
 }
 
 func (l *Lvalue) AsRvalue() *Rvalue {
-	return lvalueAsRvalue(l)
+	return &l.Rvalue
 }
 
 func (l *Lvalue) AccessField(loc *Location, field *Field) *Lvalue {
@@ -756,5 +750,5 @@ func (t *Type) Unqualified() *Type {
 }
 
 func (t *Struct) AsType() *Type {
-	return structAsType(t)
+	return &t.Type
 }
