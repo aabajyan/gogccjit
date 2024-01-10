@@ -1,7 +1,6 @@
 package gccjit
 
 import (
-	"errors"
 	"fmt"
 	"runtime"
 
@@ -599,13 +598,8 @@ func (c *Context) DumpReproducerToFile(path string) {
 	contextDumpReproducerToFile(c, path)
 }
 
-func (c *Context) Compile() (*Result, error) {
-	res := contextCompile(c)
-	if res == nil {
-		return nil, errors.New(c.GetLastError())
-	}
-
-	return res, nil
+func (c *Context) Compile() *Result {
+	return contextCompile(c)
 }
 
 func (c *Context) GetFirstError() string {
