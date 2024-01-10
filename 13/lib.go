@@ -8,6 +8,68 @@ import (
 	"github.com/ebitengine/purego"
 )
 
+const (
+	BUILTIN_UNREACHABLE             = "__builtin_unreachable"
+	BUILTIN_ABORT                   = "abort"
+	BUILTIN_EXPECT                  = "__builtin_expect"
+	BUILTIN_ADD_OVERFLOW            = "__builtin_add_overflow"
+	BUILTIN_MUL_OVERFLOW            = "__builtin_mul_overflow"
+	BUILTIN_SADDLL_OVERFLOW         = "__builtin_saddll_overflow"
+	BUILTIN_SMULLL_OVERFLOW         = "__builtin_smulll_overflow"
+	BUILTIN_SSUBLL_OVERFLOW         = "__builtin_ssubll_overflow"
+	BUILTIN_SUB_OVERFLOW            = "__builtin_sub_overflow"
+	BUILTIN_UADDLL_OVERFLOW         = "__builtin_uaddll_overflow"
+	BUILTIN_UADD_OVERFLOW           = "__builtin_uadd_overflow"
+	BUILTIN_UMULLL_OVERFLOW         = "__builtin_umulll_overflow"
+	BUILTIN_UMUL_OVERFLOW           = "__builtin_umul_overflow"
+	BUILTIN_USUBLL_OVERFLOW         = "__builtin_usubll_overflow"
+	BUILTIN_USUB_OVERFLOW           = "__builtin_usub_overflow"
+	BUILTIN_SQRTF                   = "sqrtf"
+	BUILTIN_SQRT                    = "sqrt"
+	BUILTIN_POWIF                   = "__builtin_powif"
+	BUILTIN_POWI                    = "__builtin_powi"
+	BUILTIN_SINF                    = "sinf"
+	BUILTIN_SIN                     = "sin"
+	BUILTIN_COSF                    = "cosf"
+	BUILTIN_COS                     = "cos"
+	BUILTIN_POWF                    = "powf"
+	BUILTIN_POW                     = "pow"
+	BUILTIN_EXPF                    = "expf"
+	BUILTIN_EXP                     = "exp"
+	BUILTIN_EXP2F                   = "exp2f"
+	BUILTIN_EXP2                    = "exp2"
+	BUILTIN_LOGF                    = "logf"
+	BUILTIN_LOG                     = "log"
+	BUILTIN_LOG10F                  = "log10f"
+	BUILTIN_LOG10                   = "log10"
+	BUILTIN_LOG2F                   = "log2f"
+	BUILTIN_LOG2                    = "log2"
+	BUILTIN_FMAF                    = "fmaf"
+	BUILTIN_FMA                     = "fma"
+	BUILTIN_FABSF                   = "fabsf"
+	BUILTIN_FABS                    = "fabs"
+	BUILTIN_MINF                    = "fminf"
+	BUILTIN_MIN                     = "fmin"
+	BUILTIN_MAXF                    = "fmaxf"
+	BUILTIN_MAX                     = "fmax"
+	BUILTIN_COPYSIGNF               = "copysignf"
+	BUILTIN_COPYSIGN                = "copysign"
+	BUILTIN_FLOORF                  = "floorf"
+	BUILTIN_FLOOR                   = "floor"
+	BUILTIN_CEILF                   = "ceilf"
+	BUILTIN_CEIL                    = "ceil"
+	BUILTIN_TRUNCF                  = "truncf"
+	BUILTIN_TRUNC                   = "trunc"
+	BUILTIN_RINTF                   = "rintf"
+	BUILTIN_RINT                    = "rint"
+	BUILTIN_NEARBYINTF              = "nearbyintf"
+	BUILTIN_NEARBYINT               = "nearbyint"
+	BUILTIN_ROUNDF                  = "roundf"
+	BUILTIN_ROUND                   = "round"
+	BUILTIN_EXPECT_WITH_PROBABILITY = "__builtin_expect_with_probability"
+	BUILTIN_ALLOCA                  = "__builtin_alloca"
+)
+
 type (
 	Timer    uint
 	Object   uint
@@ -239,6 +301,7 @@ var (
 	typeCompatible                       func(lhs *Type, rhs *Type) bool
 	contextNewBitfield                   func(c *Context, l *Location, typ *Type, width int, name string) *Field
 	contextNewOpaqueStruct               func(c *Context, loc *Location, name string) *Struct
+	contextGetBuiltinFunction            func(c *Context, name string) *Function
 )
 
 func getLibrary() string {
@@ -345,6 +408,7 @@ func init() {
 	purego.RegisterLibFunc(&typeCompatible, lib, "gcc_jit_compatible_types")
 	purego.RegisterLibFunc(&contextNewBitfield, lib, "gcc_jit_context_new_bitfield")
 	purego.RegisterLibFunc(&contextNewOpaqueStruct, lib, "gcc_jit_context_new_opaque_struct")
+	purego.RegisterLibFunc(&contextGetBuiltinFunction, lib, "gcc_jit_context_get_builtin_function")
 }
 
 func VersionMajor() int {
@@ -425,6 +489,10 @@ func (c *Context) AddCommandLineOption(optname string) {
 
 func (c *Context) AddDriverOption(optname string) {
 	contextAddDriverOption(c, optname)
+}
+
+func (c *Context) GetBuiltinFunction(name string) *Function {
+	return contextGetBuiltinFunction(c, name)
 }
 
 func (c *Context) NewBitfield(loc *Location, typ *Type, width int, name string) *Field {
